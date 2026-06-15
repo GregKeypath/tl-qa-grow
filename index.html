@@ -490,99 +490,12 @@ body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: #F0F4F8;
           </div>
         </div>
 
-        <!-- QA Observations -->
+        <!-- Coaching Focus -->
         <div class="card">
-          <div class="card-header"><h2>QA Observations</h2><p style="margin-top:3px">What did you notice across the calls?</p></div>
+          <div class="card-header"><h2>Coaching Focus</h2><p style="margin-top:3px">What do you want to focus on in this session?</p></div>
           <div class="card-body">
-
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:var(--kp-red-light);border-radius:7px;border:1px solid #f5c0c0">
-              <div style="flex:1">
-                <div style="font-size:12px;font-weight:600;color:var(--kp-red);margin-bottom:2px">Compliance</div>
-                <div style="font-size:11px;color:#64748b">Recording disclosed and student ID confirmed</div>
-              </div>
-              <select id="obs-compliance" style="border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;font-size:12px;font-family:inherit;background:#fff;color:#1a2533">
-                <option value="pass">Pass</option>
-                <option value="fail">Fail</option>
-              </select>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr;gap:12px">
-              <div style="border:1px solid #DBEAFE;border-radius:7px;overflow:hidden">
-                <div style="background:#DBEAFE;padding:9px 12px;display:flex;align-items:center;justify-content:space-between">
-                  <div>
-                    <span style="font-size:12px;font-weight:700;color:#1D4ED8">Connect</span>
-                    <span style="font-size:11px;color:#3B82F6;margin-left:8px">10% — Q1: Professional opening | Q2: Active listening</span>
-                  </div>
-                  <select id="obs-connect-rating" style="border:1px solid rgba(29,78,216,0.3);border-radius:5px;padding:4px 8px;font-size:11px;font-family:inherit;background:#fff;color:#1a2533">
-                    <option value="">Rating...</option>
-                    <option value="Strong">Strong</option>
-                    <option value="Developing">Developing</option>
-                    <option value="Needs work">Needs work</option>
-                  </select>
-                </div>
-                <div style="padding:10px 12px;background:#fff">
-                  <textarea id="obs-connect" rows="2" placeholder="What did you observe? e.g. Opening was warm but purpose wasn't clearly stated..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
-                </div>
-              </div>
-
-              <div style="border:1px solid #FEE2E2;border-radius:7px;overflow:hidden">
-                <div style="background:#FEE2E2;padding:9px 12px;display:flex;align-items:center;justify-content:space-between">
-                  <div>
-                    <span style="font-size:12px;font-weight:700;color:#B91C1C">Explore</span>
-                    <span style="font-size:11px;color:#EF4444;margin-left:8px">40% — Q3: Effective questioning | Q4: Confirmed understanding</span>
-                  </div>
-                  <select id="obs-explore-rating" style="border:1px solid rgba(185,28,28,0.3);border-radius:5px;padding:4px 8px;font-size:11px;font-family:inherit;background:#fff;color:#1a2533">
-                    <option value="">Rating...</option>
-                    <option value="Strong">Strong</option>
-                    <option value="Developing">Developing</option>
-                    <option value="Needs work">Needs work</option>
-                  </select>
-                </div>
-                <div style="padding:10px 12px;background:#fff">
-                  <textarea id="obs-explore" rows="2" placeholder="What did you observe? e.g. Jumped to advice before fully understanding the student's situation..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
-                </div>
-              </div>
-
-              <div style="border:1px solid #FEF3C7;border-radius:7px;overflow:hidden">
-                <div style="background:#FEF3C7;padding:9px 12px;display:flex;align-items:center;justify-content:space-between">
-                  <div>
-                    <span style="font-size:12px;font-weight:700;color:#B45309">Quality of Advice</span>
-                    <span style="font-size:11px;color:#D97706;margin-left:8px">30% — Q5: Appropriate advice | Q6: Options presented</span>
-                  </div>
-                  <select id="obs-advice-rating" style="border:1px solid rgba(180,83,9,0.3);border-radius:5px;padding:4px 8px;font-size:11px;font-family:inherit;background:#fff;color:#1a2533">
-                    <option value="">Rating...</option>
-                    <option value="Strong">Strong</option>
-                    <option value="Developing">Developing</option>
-                    <option value="Needs work">Needs work</option>
-                  </select>
-                </div>
-                <div style="padding:10px 12px;background:#fff">
-                  <textarea id="obs-advice" rows="2" placeholder="What did you observe? e.g. Advice was sound but options weren't clearly presented..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
-                </div>
-              </div>
-
-              <div style="border:1px solid #D1FAE5;border-radius:7px;overflow:hidden">
-                <div style="background:#D1FAE5;padding:9px 12px;display:flex;align-items:center;justify-content:space-between">
-                  <div>
-                    <span style="font-size:12px;font-weight:700;color:#065F46">Resolve</span>
-                    <span style="font-size:11px;color:#059669;margin-left:8px">20% — Q7: Clear close | Q8: Student left confident</span>
-                  </div>
-                  <select id="obs-resolve-rating" style="border:1px solid rgba(6,95,70,0.3);border-radius:5px;padding:4px 8px;font-size:11px;font-family:inherit;background:#fff;color:#1a2533">
-                    <option value="">Rating...</option>
-                    <option value="Strong">Strong</option>
-                    <option value="Developing">Developing</option>
-                    <option value="Needs work">Needs work</option>
-                  </select>
-                </div>
-                <div style="padding:10px 12px;background:#fff">
-                  <textarea id="obs-resolve" rows="2" placeholder="What did you observe? e.g. Call ended abruptly without confirmed next steps..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-top:14px;margin-bottom:0">
-              <label>Overall Comments</label>
-              <textarea id="new-overall-comments" rows="3" placeholder="Any additional context, patterns across calls, or notes for the coaching session..."></textarea>
+            <div class="form-group" style="margin-bottom:0">
+              <textarea id="new-overall-comments" rows="6" placeholder="e.g. The advisor is technically sound but struggles to slow down in the Explore phase. They move to advice too quickly without confirming understanding. Want to focus on questioning technique and building confidence to pause before responding."></textarea>
             </div>
           </div>
         </div>
@@ -652,6 +565,17 @@ body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: #F0F4F8;
     </div>
 
     <div class="grow-stages" id="grow-stages"></div>
+
+    <!-- Transcript -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header" style="cursor:pointer" onclick="toggleTranscript()">
+        <h2>Call Transcript</h2>
+        <span id="transcript-toggle-label" style="font-size:12px;color:#94a3b8">Click to expand</span>
+      </div>
+      <div id="transcript-panel" style="display:none;padding:16px 20px">
+        <textarea id="sess-transcript" style="width:100%;min-height:260px;border:1px solid #e2e8f0;border-radius:7px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;resize:vertical" placeholder="Paste the call transcript here for reference during the session..."></textarea>
+      </div>
+    </div>
 
     <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
       <button class="btn btn-secondary" onclick="saveSessionNotes()">Save Notes</button>
@@ -906,21 +830,11 @@ async function analyseTranscript() {
   const advisor = document.getElementById('new-advisor').value.trim();
   if (!advisor) { showToast('Please select an advisor'); return; }
 
-  const callsReviewed = document.getElementById('new-calls-reviewed').value || 'not specified';
-  const overallScore  = document.getElementById('new-overall-score').value;
-  const compliance    = document.getElementById('obs-compliance').value;
-  const connectRating = document.getElementById('obs-connect-rating').value;
-  const connectObs    = document.getElementById('obs-connect').value.trim();
-  const exploreRating = document.getElementById('obs-explore-rating').value;
-  const exploreObs    = document.getElementById('obs-explore').value.trim();
-  const adviceRating  = document.getElementById('obs-advice-rating').value;
-  const adviceObs     = document.getElementById('obs-advice').value.trim();
-  const resolveRating = document.getElementById('obs-resolve-rating').value;
-  const resolveObs    = document.getElementById('obs-resolve').value.trim();
+  const callsReviewed   = document.getElementById('new-calls-reviewed').value || 'not specified';
+  const overallScore    = document.getElementById('new-overall-score').value;
   const overallComments = document.getElementById('new-overall-comments').value.trim();
 
-  const hasObs = connectObs || exploreObs || adviceObs || resolveObs || overallComments;
-  if (!hasObs) { showToast('Please add at least one observation before generating'); return; }
+  if (!overallComments) { showToast('Please add a coaching focus before generating'); return; }
 
   let apiKey = GEMINI_KEY || localStorage.getItem('grow-gemini-key');
   if (!apiKey || apiKey === 'GEMINI_KEY_PLACEHOLDER') {
@@ -937,24 +851,12 @@ async function analyseTranscript() {
   const obsText = [
     `Calls reviewed: ${callsReviewed}`,
     overallScore ? `Overall QA score: ${overallScore}%` : '',
-    `Compliance: ${compliance === 'fail' ? 'FAIL - recording/ID issue observed' : 'Pass'}`,
-    connectRating  ? `Connect (10%) - Rating: ${connectRating}${connectObs ? ' | Notes: ' + connectObs : ''}` : connectObs ? `Connect (10%) - Notes: ${connectObs}` : '',
-    exploreRating  ? `Explore (40%) - Rating: ${exploreRating}${exploreObs ? ' | Notes: ' + exploreObs : ''}` : exploreObs ? `Explore (40%) - Notes: ${exploreObs}` : '',
-    adviceRating   ? `Quality of Advice (30%) - Rating: ${adviceRating}${adviceObs ? ' | Notes: ' + adviceObs : ''}` : adviceObs ? `Quality of Advice (30%) - Notes: ${adviceObs}` : '',
-    resolveRating  ? `Resolve (20%) - Rating: ${resolveRating}${resolveObs ? ' | Notes: ' + resolveObs : ''}` : resolveObs ? `Resolve (20%) - Notes: ${resolveObs}` : '',
-    overallComments ? `Overall comments: ${overallComments}` : '',
+    `Coaching focus: ${overallComments}`,
   ].filter(Boolean).join('\n');
 
-  const prompt = `You are a coaching assistant for Team Leaders at Keypath Education, Australia. A TL has reviewed ${callsReviewed} call(s) for advisor ${advisor} and provided these QA observations. Build a tailored GROW coaching session template.
+  const prompt = `You are a coaching assistant for Team Leaders at Keypath Education, Australia. A TL has reviewed ${callsReviewed} call(s) for advisor ${advisor} and wants to run a GROW coaching session. Build a tailored GROW coaching template based on the TL's coaching focus notes.
 
-FY27 QA FRAMEWORK:
-- Compliance: Auto-fail if recording not disclosed or student ID not confirmed
-- Group A: Connect (10%) - Q1: Professional opening | Q2: Active listening throughout
-- Group B: Explore (40%) - Q3: Effective questioning before advising | Q4: Summarised and confirmed understanding
-- Group C: Quality of Advice (30%) - Q5: Advice appropriate to student's situation | Q6: Options presented where available
-- Group D: Resolve (20%) - Q7: Clear conclusion with confirmed next steps | Q8: Student left supported and confident
-
-TL OBSERVATIONS:
+TL NOTES:
 ${obsText}
 
 Respond ONLY with valid JSON (no markdown, no explanation):
@@ -1063,11 +965,6 @@ function clearNewSession() {
   document.getElementById('new-call-date').value = '';
   document.getElementById('new-calls-reviewed').value = '';
   document.getElementById('new-overall-score').value = '';
-  document.getElementById('obs-compliance').value = 'pass';
-  ['connect','explore','advice','resolve'].forEach(g => {
-    document.getElementById('obs-' + g + '-rating').value = '';
-    document.getElementById('obs-' + g).value = '';
-  });
   document.getElementById('new-overall-comments').value = '';
   document.getElementById('analysis-placeholder').style.display = '';
   document.getElementById('analysis-result').classList.remove('visible');
@@ -1093,6 +990,9 @@ function renderSessionPage(session) {
   ];
 
   const container = document.getElementById('grow-stages');
+  const transcriptEl = document.getElementById('sess-transcript');
+  if (transcriptEl) transcriptEl.value = session.transcript || '';
+
   container.innerHTML = stageConfig.map((stage, i) => {
     const questions = session.analysis?.growQuestions?.[stage.key] || [];
     const notes = session.grow?.[stage.key]?.notes || '';
@@ -1125,6 +1025,14 @@ function renderSessionPage(session) {
   }).join('');
 }
 
+function toggleTranscript() {
+  const panel = document.getElementById('transcript-panel');
+  const label = document.getElementById('transcript-toggle-label');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  label.textContent = isOpen ? 'Click to expand' : 'Click to collapse';
+}
+
 function toggleStage(header) {
   const body = header.nextElementSibling;
   const isOpen = header.classList.contains('open');
@@ -1141,6 +1049,8 @@ function saveSessionNotes() {
     if (notesEl) currentSession.grow[key].notes = notesEl.value;
     if (commitEl) currentSession.grow[key].commitment = commitEl.value;
   });
+  const transcriptEl = document.getElementById('sess-transcript');
+  if (transcriptEl) currentSession.transcript = transcriptEl.value;
   saveSession(currentSession);
   showToast('Notes saved');
 }

@@ -598,15 +598,15 @@ function growPrompt(s) {
     'Read across ALL the calls together and pull out insights Greg can build into his coaching session. Do not write coaching questions or a script.',
     '1. For each QA group (Connect, Explore, Quality of Advice, Resolve), give the overall insight across the calls: what is consistently working, what is consistently holding the adviser back, and one short quote taken word for word from the evidence that shows it, with the call date. If a group has nothing to develop, say so plainly.',
     '2. If any call failed compliance, give the same insight for Compliance. If none failed, leave compliance empty.',
-    '3. List the general coaching items that come up across the calls, most important first: themes, habits or gaps that recur, not one-off moments. For each give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Give 3 to 6 items. Compliance items always come first. A theme in only one call can be included only if it is significant.',
-    '4. Name the ONE main coaching focus, weighing the section weightings, compliance (always first if present), how often each item recurs, any earlier coaching goal, and Greg\'s notes.',
+    '3. Choose ONE coaching focus for this session. Greg coaches to a single focus at a time, so pick the one habit or gap with the highest impact, weighing compliance (always the focus if any call failed it), how often it recurs across the calls, the section weightings, any earlier coaching goal and Greg\'s notes. Give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Return exactly one item.',
+    '4. The focus field is that same single focus, as one line.',
     '5. Recognise 2 or 3 genuine strengths seen across the calls.',
     '',
     'RULES',
     RULES.join('\n'),
     '',
     'Return JSON only, in exactly this shape:',
-    '{"focus":"one line naming the main coaching focus","summary":"2 to 3 sentences on the overall picture across the calls, including progress on any earlier goal","strengths":["2 or 3 short strengths"],"groups":{"connect":{"working":"","develop":"","quote":"","date":"YYYY-MM-DD"},"explore":{"working":"","develop":"","quote":"","date":""},"qualityOfAdvice":{"working":"","develop":"","quote":"","date":""},"resolve":{"working":"","develop":"","quote":"","date":""},"compliance":{"working":"","develop":"","quote":"","date":""}},"items":[{"title":"","detail":"what to coach and what good looks like","calls":3,"quote":"","date":"YYYY-MM-DD"}]}'
+    '{"focus":"one line naming the main coaching focus","summary":"2 to 3 sentences on the overall picture across the calls, including progress on any earlier goal","strengths":["2 or 3 short strengths"],"groups":{"connect":{"working":"","develop":"","quote":"","date":"YYYY-MM-DD"},"explore":{"working":"","develop":"","quote":"","date":""},"qualityOfAdvice":{"working":"","develop":"","quote":"","date":""},"resolve":{"working":"","develop":"","quote":"","date":""},"compliance":{"working":"","develop":"","quote":"","date":""}},"items":[{"title":"the one coaching focus","detail":"what to coach and what good looks like","calls":3,"quote":"","date":"YYYY-MM-DD"}]}'
   ].join('\n');
 }
 function outcomePrompt(s) {
@@ -623,7 +623,7 @@ function outcomePrompt(s) {
     '',
     'COACHING FOCUS: ' + (pl.focus || 'not set'),
     'QA SUMMARY: ' + (pl.summary || ''),
-    'COACHING ITEMS FROM THE CALLS: ' + ((pl.items || []).map(i => i.title + (i.calls ? ' (' + i.calls + ' calls)' : '')).join('; ') || 'none'),
+    'WHAT TO COACH: ' + (((pl.items || [])[0] || {}).detail || 'not set'),
     '',
     'SESSION NOTES (what was actually said)',
     'Goal: ' + (n.goal || 'none'),
@@ -653,7 +653,7 @@ function normPlan(r) {
   const gs = r.groups || {};
   const o = { focus: toText(r.focus), summary: toText(r.summary), strengths: Array.isArray(r.strengths) ? r.strengths.map(toText).filter(Boolean) : [], groups: {}, items: [] };
   GROUPS.forEach(g => { const x = gs[g.key] || {}; o.groups[g.key] = { working: toText(x.working), develop: toText(x.develop), quote: toText(x.quote), date: toText(x.date) }; });
-  o.items = (Array.isArray(r.items) ? r.items : []).map(i => ({ title: toText(i.title), detail: toText(i.detail), calls: isNum(+i.calls) ? +i.calls : null, quote: toText(i.quote), date: toText(i.date) })).filter(i => i.title);
+  o.items = (Array.isArray(r.items) ? r.items.slice(0, 1) : []).map(i => ({ title: toText(i.title), detail: toText(i.detail), calls: isNum(+i.calls) ? +i.calls : null, quote: toText(i.quote), date: toText(i.date) })).filter(i => i.title);
   return o;
 }
 async function buildPlan(s) {
@@ -665,6 +665,8 @@ async function buildPlan(s) {
   busy('Reading ' + calls.length + ' QA call' + (calls.length === 1 ? '' : 's') + ' for ' + first(s.adviser) + '…');
   try {
     s.plan = normPlan(await ai(growPrompt(s)));
+    if (!s.plan.items.length) s.plan.items = [{ title: s.plan.focus, detail: '', calls: null, quote: '', date: '' }];
+    if (!s.plan.focus) s.plan.focus = s.plan.items[0].title;
     s.planAt = Date.now();
     await saveNow(s);
     location.hash = '#/session/' + s.id + '/plan';
@@ -689,13 +691,13 @@ function questionsPrompt(s) {
     (pl.items || []).map((i, n) => (n + 1) + '. ' + i.title + ': ' + i.detail).join('\n'),
     '',
     'TASK',
-    'For EACH coaching item, in the same order, write 3 or 4 coaching questions Greg could ask ' + first(s.adviser) + ' about it, grounded in the QA feedback above.',
-    'Questions are open and adviser-led: they help the adviser notice and solve it themselves rather than telling them. Short and natural to say aloud. Where it helps, anchor a question to a specific call by its date and what happened (for example: On your 27 Oct call, when the student mentioned...). Cover the GROW stages across the set and start each question with its stage and a colon: "Goal: ", "Reality: ", "Options: " or "Will: ".',
+    'Write 6 coaching questions Greg could ask ' + first(s.adviser) + ' about the coaching focus (the first coaching item), grounded in the QA feedback above. Ask about that one focus only.',
+    'Questions are open and adviser-led: they help the adviser notice and solve it themselves rather than telling them. Short and natural to say aloud. Where it helps, anchor a question to a specific call by its date and what happened (for example: On your 27 Oct call, when the student mentioned...). Cover all four GROW stages in order (Goal, Reality, Options, Will) and start each question with its stage and a colon: "Goal: ", "Reality: ", "Options: " or "Will: ".',
     '',
     'RULES',
     RULES.join('\n'),
     '',
-    'Return JSON only: {"items":[["question","question","question"]]} with one array per coaching item, in order.'
+    'Return JSON only: {"items":[["question","question","question","question","question","question"]]} with one array for the coaching focus.'
   ].join('\n');
 }
 async function buildQuestions(s) {
@@ -720,11 +722,10 @@ const MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July'
 function prePrompt(s, calls) {
   const pl = s.plan || {};
   return [
-    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, write a short email to Student Success Adviser ' + first(s.adviser) + ' before their monthly QA coaching session.',
+    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, choose calls for Student Success Adviser ' + first(s.adviser) + ' to listen back to before their monthly QA coaching session. The adviser is not told the focus: they listen and come to the session with their own view, so the calls must make the focus easy to notice.',
     '',
-    'MAIN COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not set'),
-    'COACHING ITEMS: ' + ((pl.items || []).map(i => i.title).join('; ') || 'none'),
-    'QA MONTH: ' + sessionMonth(s),
+    'COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not set'),
+    'WHAT TO COACH: ' + (((pl.items || [])[0] || {}).detail || ''),
     '',
     'CALLS AVAILABLE (id | date | overall | result | coaching focus | weakest feedback)',
     calls.map(c => {
@@ -732,30 +733,46 @@ function prePrompt(s, calls) {
       return c.interactionId + ' | ' + cdl(c) + ' | ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'not scored') + ' | ' + (c.result || '') + ' | ' + clip(c.primaryCoachingFocus || c.coachingRecommendation, 200) + ' | ' + (low || 'none');
     }).join('\n'),
     '',
-    'TASK 1: choose 2 or 3 calls (3 if at least 3 are available) that best show the main coaching focus, so listening back makes the focus obvious. Prefer clear examples. Give each a one-line reason for Greg (not for the adviser).',
-    'TASK 2: write the email in Greg\'s style, based on this example he sent before:',
-    '"Hi Emma,\\n\\nYour October QA session is coming up, in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month.\\n\\nBefore we catch up, please have a listen back to these calls:\\n\\n[CALL LINKS]\\n\\nIn the session we will use the GROW model to set a goal together for your calls. As you listen, have a think and come with a goal based on these calls.\\n\\nI know listening back can feel a bit awkward, but it really is one of the best ways to improve.\\n\\nGreg"',
-    'Keep the same warm, short, plain style and structure. Put the exact line [CALL LINKS] on its own where the links go. Add one or two sentences on what to listen for, pointing at the focus area in a supportive way without scores or the word fail. Make clear what is expected before the session (listen to the calls, note what they notice, come with a goal) and what will happen in it (talk through what they heard, use GROW to agree one goal and next steps). Sign off "Greg".',
+    'TASK: choose 2 or 3 calls (3 if at least 3 are available) that best show the coaching focus, so listening back makes it easy to notice. Prefer clear examples. Give each a one-line reason for Greg only.',
     '',
     'RULES',
     RULES.join('\n'),
     '',
-    'Return JSON only: {"calls":[{"id":"exact id from the list","why":""}],"subject":"MBS QA Session, October style subject","body":""}'
+    'Return JSON only: {"calls":[{"id":"exact id from the list","why":""}]}'
+  ].join('\n');
+}
+function preTemplate(s) {
+  return [
+    'Hi ' + first(s.adviser) + ',',
+    '',
+    'Your ' + sessionMonth(s) + ' QA session is coming up in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month.',
+    '',
+    'Before we catch up, please have a listen back to these calls and note down what you notice:',
+    '',
+    '[CALL LINKS]',
+    '',
+    'In the session we will talk through what you heard and use the GROW model to set a goal together and agree on next steps. As you listen, have a think and come with a goal based on these calls.',
+    '',
+    'I know listening back can feel a bit awkward, but it really is one of the best ways to improve.',
+    '',
+    'Thanks so much, looking forward to catching up.',
+    '',
+    'Greg'
   ].join('\n');
 }
 async function buildPre(s) {
   const calls = (s.callIds || []).map(callById).filter(c => c && c.transcriptUrl);
   if (!calls.length) { toast('None of the ticked calls have a Genesys link.', true); return; }
-  busy('Choosing calls and writing the email…');
+  busy('Choosing the calls…');
   try {
-    const r = await ai(prePrompt(s, calls));
-    const ok = new Set(calls.map(c => c.interactionId));
-    let pick = (Array.isArray(r.calls) ? r.calls : []).filter(x => x && ok.has(x.id)).slice(0, 3).map(x => ({ id: x.id, why: toText(x.why) }));
+    let pick = [];
+    if (calls.length > 3 && s.plan) {
+      const r = await ai(prePrompt(s, calls));
+      const ok = new Set(calls.map(c => c.interactionId));
+      pick = (Array.isArray(r.calls) ? r.calls : []).filter(x => x && ok.has(x.id)).slice(0, 3).map(x => ({ id: x.id, why: toText(x.why) }));
+    }
     if (!pick.length) pick = calls.slice(0, 3).map(c => ({ id: c.interactionId, why: '' }));
-    let body = toText(r.body).replace(/\\n/g, '\n');
-    if (!body.includes('[CALL LINKS]')) body = body.replace(/(listen back to these calls:?\s*\n)/i, '$1\n[CALL LINKS]\n');
-    if (!body.includes('[CALL LINKS]')) body += '\n\n[CALL LINKS]';
-    s.preEmail = { calls: pick, subject: toText(r.subject) || ((s.partner || 'QA') + ' QA Session, ' + sessionMonth(s)), body };
+    s.preEmail = { calls: pick, subject: (s.partner || 'QA') + ' QA Session, ' + sessionMonth(s), body: preTemplate(s) };
     await saveNow(s);
     location.hash = '#/session/' + s.id + '/pre';
     toast('Pre-session email ready');
@@ -787,7 +804,7 @@ async function copyRich(html, plain) {
 function vPre(s) {
   const pe = s.preEmail;
   const avail = (s.callIds || []).map(callById).filter(c => c && c.transcriptUrl).sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate)));
-  if (!pe) return '<div class="card empty">Write the email that goes to ' + esc(first(s.adviser)) + ' before the session, with links to the 2 or 3 calls that best show the coaching focus.' + (s.plan ? '' : '<br>Building the QA insights first gives a better choice of calls.') + '<div class="actions" style="justify-content:center"><button class="btn green" data-act="pre"' + (avail.length ? '' : ' disabled') + '>Write pre-session email</button></div>' + (avail.length ? '' : '<p style="font-size:13px">None of the ticked calls have a Genesys link.</p>') + '</div>';
+  if (!pe) return '<div class="card empty">Write the email that goes to ' + esc(first(s.adviser)) + ' before the session, with links to the 2 or 3 calls that best show the coaching focus. The email uses your standard wording and does not name the focus.' + (s.plan ? '' : '<br>Building the QA insights first gives a better choice of calls.') + '<div class="actions" style="justify-content:center"><button class="btn green" data-act="pre"' + (avail.length ? '' : ' disabled') + '>Write pre-session email</button></div>' + (avail.length ? '' : '<p style="font-size:13px">None of the ticked calls have a Genesys link.</p>') + '</div>';
   const chosen = new Map((pe.calls || []).map(x => [x.id, x.why]));
   const parts = preParts(s);
   let h = '<div class="split"><div class="card"><h2>Calls to listen to</h2><p class="sub">Tick 2 or 3. They appear in the email as Call 1, Call 2 and so on, in date order.</p>';
@@ -796,7 +813,7 @@ function vPre(s) {
   h += '<label class="f">Subject</label><div class="copyrow"><input class="in" data-bind="preEmail.subject" value="' + esc(pe.subject) + '"><button class="cbtn" data-act="copy" data-path="preEmail.subject">Copy</button></div>';
   h += '<label class="f">Email</label><textarea class="in" rows="16" data-bind="preEmail.body" data-rerender>' + esc(pe.body) + '</textarea>';
   h += '<label class="f">How it will look</label><div class="preview" id="prePreview">' + parts.html + '</div>';
-  h += '<div class="actions"><button class="btn blue sm" data-act="copy-pre">Copy email with links</button><button class="ghost" data-act="mailto-pre">Open in Outlook</button><button class="ghost" data-act="pre">Rewrite</button></div></div></div>';
+  h += '<div class="actions"><button class="btn blue sm" data-act="copy-pre">Copy email with links</button><button class="ghost" data-act="mailto-pre">Open in Outlook</button><button class="ghost" data-act="pre">Choose calls again and reset the email</button></div></div></div>';
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Next: session notes</button></div>';
   return h;
 }
@@ -999,7 +1016,7 @@ function vGuide() {
     ['will', 'W', 'Will', 'Commit to specific actions, a measure and a date. This becomes the HiBob goal.', ['What will you do, starting with your next call?', 'How will we both know it is working?']]
   ];
   let h = '<div class="ph"><div><h1>GROW guide</h1><p>How a session runs in this tool, and what each stage is for.</p></div></div>';
-  h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, pick the month of QA calls to cover and add your own observations.</li><li><b>QA insights.</b> The AI reads all the calls together and gives an insight for each QA group, plus the coaching items that keep coming up. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
+  h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, pick the month of QA calls to cover and add your own observations.</li><li><b>QA insights.</b> The AI reads all the calls together and picks the one coaching focus with the most impact, with an insight for each QA group behind it and coaching questions you can ask. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
   h += '<div class="guide">' + g.map(x => '<div class="card stage ' + x[0] + '"><div class="stage-h"><span class="L">' + x[1] + '</span><h3>' + x[2] + '</h3></div><p style="margin:0 0 6px">' + x[3] + '</p><ul class="qlist">' + x[4].map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>').join('') + '</div>';
   return h;
 }
@@ -1051,11 +1068,17 @@ function vPlan(s) {
   const pl = s.plan;
   if (!pl || !pl.groups) return '<div class="card empty">No QA insights yet.<div class="actions" style="justify-content:center"><button class="btn green" data-act="build">Build QA insights</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Back to preparation</button></div></div>';
   const calls = (s.callIds || []).map(callById).filter(Boolean), st = stats(calls);
-  let h = '<div class="card" style="margin-bottom:14px"><label class="f">Main coaching focus</label><input class="in" data-bind="plan.focus" value="' + esc(pl.focus) + '" style="font-weight:600;font-size:15px">';
-  h += '<div class="grid g2" style="margin-top:2px"><div><label class="f">Overall picture across ' + calls.length + ' call' + (calls.length === 1 ? '' : 's') + '</label><textarea class="in" rows="4" data-bind="plan.summary">' + esc(pl.summary) + '</textarea></div><div><label class="f">Strengths to recognise (one per line)</label><textarea class="in" rows="4" data-bind="plan.strengths" data-lines>' + esc((pl.strengths || []).join('\n')) + '</textarea></div></div></div>';
-  h += '<div class="section-t"><h2>Coaching items from the calls</h2><span class="chip">' + (pl.items || []).length + ' items</span><span style="flex:1"></span><button class="btn blue sm" data-act="questions">' + ((pl.items || []).some(i => (i.questions || []).length) ? 'Rewrite coaching questions' : 'Suggest coaching questions') + '</button></div><div class="grid" style="margin-bottom:8px">';
-  h += (pl.items || []).map((it, i) => '<div class="card item"><div class="item-h"><span class="num">' + (i + 1) + '</span><input class="in" data-bind="plan.items.' + i + '.title" value="' + esc(it.title) + '" style="font-weight:600">' + (it.calls ? '<span class="pill st-plan">' + it.calls + ' of ' + calls.length + ' calls</span>' : '') + '<button class="link danger" data-act="del-item" data-i="' + i + '" title="Remove item">Remove</button></div><textarea class="in" rows="3" data-bind="plan.items.' + i + '.detail">' + esc(it.detail) + '</textarea>' + (it.quote ? '<div class="ev"><q>' + esc(it.quote) + '</q><small>' + esc(fmtDate(it.date)) + '</small></div>' : '') + ((it.questions || []).length ? '<label class="f">Coaching questions you could ask (one per line)</label><textarea class="in" rows="' + Math.max(3, it.questions.length + 1) + '" data-bind="plan.items.' + i + '.questions" data-lines>' + esc(it.questions.join(String.fromCharCode(10))) + '</textarea>' : '') + '</div>').join('');
-  h += '<button class="link" data-act="add-item" style="justify-self:start;font-size:13px">+ Add coaching item</button></div>';
+  if (!(pl.items || []).length) pl.items = [{ title: pl.focus, detail: '', calls: null, quote: '', date: '' }];
+  const it = pl.items[0];
+  let h = '<div class="card item" style="margin-bottom:14px"><div class="item-h"><h2 style="margin:0">Coaching focus</h2><span style="flex:1"></span>' + (it.calls ? '<span class="pill st-plan">Came up in ' + it.calls + ' of ' + calls.length + ' calls</span>' : '') + '</div>';
+  h += '<input class="in" data-bind="plan.focus" value="' + esc(pl.focus) + '" style="font-weight:600;font-size:15px">';
+  h += '<label class="f">What to coach and what good looks like</label><textarea class="in" rows="3" data-bind="plan.items.0.detail">' + esc(it.detail) + '</textarea>';
+  if (it.quote) h += '<div class="ev"><q>' + esc(it.quote) + '</q><small>' + esc(fmtDate(it.date)) + '</small></div>';
+  h += '<div class="row" style="margin-top:6px"><label class="f" style="margin:0">Coaching questions you could ask' + ((it.questions || []).length ? ' (one per line)' : '') + '</label><span style="flex:1"></span><button class="btn blue sm" data-act="questions">' + ((it.questions || []).length ? 'Rewrite coaching questions' : 'Suggest coaching questions') + '</button></div>';
+  if ((it.questions || []).length) h += '<textarea class="in" rows="' + Math.max(4, it.questions.length + 1) + '" data-bind="plan.items.0.questions" data-lines>' + esc(it.questions.join(String.fromCharCode(10))) + '</textarea>';
+  if (pl.items.length > 1) h += '<p class="tip">These insights were built with ' + pl.items.length + ' themes before the change to one focus. <button class="link" data-act="build">Rebuild</button> to get a single focus, or keep this one.</p>';
+  h += '</div>';
+  h += '<div class="card" style="margin-bottom:14px"><div class="grid g2"><div><label class="f">Overall picture across ' + calls.length + ' call' + (calls.length === 1 ? '' : 's') + '</label><textarea class="in" rows="4" data-bind="plan.summary">' + esc(pl.summary) + '</textarea></div><div><label class="f">Strengths to recognise (one per line)</label><textarea class="in" rows="4" data-bind="plan.strengths" data-lines>' + esc((pl.strengths || []).join('\n')) + '</textarea></div></div></div>';
   h += '<div class="section-t"><h2>Insights by QA group</h2></div><div class="grid g2">' + GROUPS.map(g => {
     const x = (pl.groups || {})[g.key] || {};
     if (g.key === 'compliance' && !st.fails && !x.develop && !x.working) return '';
@@ -1070,8 +1093,9 @@ function vNotes(s) {
   let h = '';
   if (!s.plan) h += '<div class="callout">No QA insights yet. You can still take notes, or <button class="link" data-act="build">build the insights first</button>.</div>';
   else {
-    h += '<div class="card" style="margin-bottom:14px;border-left:4px solid var(--g)"><h2>To build into this session</h2>' + (pl.focus ? '<p style="margin:-4px 0 10px"><b>Main focus:</b> ' + esc(pl.focus) + '</p>' : '');
-    if ((pl.items || []).length) h += '<ol class="qlist">' + pl.items.map(i => '<li><b>' + esc(i.title) + '</b>' + (i.calls ? ' <span style="color:var(--muted)">(' + i.calls + ' calls)</span>' : '') + (i.detail ? '<br><span style="color:var(--muted)">' + esc(i.detail) + '</span>' : '') + ((i.questions || []).length ? '<ul class="qlist" style="margin-top:4px">' + i.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
+    const fi = (pl.items || [])[0] || {};
+    h += '<div class="card" style="margin-bottom:14px;border-left:4px solid var(--g)"><h2>Coaching focus</h2>' + (pl.focus ? '<p style="margin:-4px 0 6px;font-weight:600;font-size:15px">' + esc(pl.focus) + '</p>' : '') + (fi.detail ? '<p style="margin:0 0 8px;color:var(--muted)">' + esc(fi.detail) + '</p>' : '');
+    if ((fi.questions || []).length) h += '<div class="kv"><b>Questions you could ask</b><ul class="qlist">' + fi.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>';
     if ((pl.strengths || []).length) h += '<p style="margin:10px 0 0;font-size:13.5px"><b>Strengths to recognise:</b> ' + esc(pl.strengths.join('; ')) + '</p>';
     h += '</div>';
   }

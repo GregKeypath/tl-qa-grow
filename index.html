@@ -205,6 +205,8 @@ textarea.in{resize:vertical;min-height:70px;line-height:1.5}
 .busy-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 28px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(36,38,43,.12)}
 .spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--w);animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.updbar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:70;background:#fff;border:1px solid var(--w);box-shadow:0 8px 24px rgba(36,38,43,.15);border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;font-weight:600;max-width:calc(100vw - 32px)}
+.updbar.hidden{display:none}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:9px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .2s;z-index:60;max-width:90vw}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.bad{background:var(--dnm)}
@@ -254,6 +256,7 @@ dialog::backdrop{background:rgba(36,38,43,.35)}
 </div>
 <div class="busy hidden" id="busy"><div class="busy-card"><span class="spin"></span><b id="busyMsg">Working</b></div></div>
 <div id="toast"></div>
+<div class="updbar hidden" id="updBar">A new version of the GROW tool is ready. <button class="btn green sm" data-act="fresh">Reload now</button></div>
 <script>
 const QA_BASE = 'https://keypath-au.github.io/BU2-Team-Dashboard/';
 const QA_URL = QA_BASE + 'qa-dashboard.html';
@@ -1197,6 +1200,7 @@ document.addEventListener('click', e => {
   if (!t) return;
   const act = t.dataset.act, s = curSession();
   if (act === 'go') { location.hash = t.dataset.href; return; }
+  if (act === 'fresh') { freshReload(); return; }
   if (act === 'toggle-call') { const id = t.dataset.cid; openCalls.has(id) ? openCalls.delete(id) : openCalls.add(id); render(); return; }
   if (act === 'win') { winSel = t.dataset.win; render(); return; }
   if (act === 'sfilter') { sessFilter = t.dataset.f; render(); return; }
@@ -1266,6 +1270,22 @@ document.addEventListener('change', e => {
     saveSoon(s);
     render();
   } else if (el.dataset && el.dataset.bind === 'date') render();
+});
+const BUILD = 'BUILD_STAMP';
+async function checkVersion() {
+  if (BUILD === 'BUILD_' + 'STAMP' || location.hostname === 'localhost') return;
+  try {
+    const t = await (await fetch(location.pathname + '?vc=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/const BUILD = '([^']+)'/);
+    if (m && m[1] !== BUILD) $('#updBar').classList.remove('hidden');
+  } catch (e) { }
+}
+function freshReload() { location.href = location.pathname + '?v=' + Date.now() + location.hash; }
+setInterval(checkVersion, 60000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  checkVersion();
+  if ($('#saveState').textContent !== 'Saving…' && !document.activeElement.matches('input,textarea')) loadSessions();
 });
 let lastAdv = '';
 window.addEventListener('hashchange', () => { const r = route(); if (r.page === 'adviser' && r.a !== lastAdv) { winSel = ''; lastAdv = r.a; } render(); window.scrollTo(0, 0); });

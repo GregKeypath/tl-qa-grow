@@ -169,6 +169,17 @@ textarea.in{resize:vertical;min-height:70px;line-height:1.5}
 .item-h .in{flex:1;min-width:0}
 .grp{border-top:4px solid var(--bc)}
 .grp .stage-h .pill{background:var(--pb);color:var(--pt)}
+.qform{margin-bottom:14px}
+.sp5{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.sp5 label,.pickopt{cursor:pointer}
+.sp5 input,.pickopt input{position:absolute;opacity:0;pointer-events:none}
+.sp5 span,.pickopt span{display:inline-grid;place-items:center;min-width:38px;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--field);font:600 14px var(--mono);color:var(--muted)}
+.sp5 .s0 span{font:500 12.5px var(--sans)}
+.sp5 .s1 input:checked+span,.sp5 .s2 input:checked+span{background:var(--dnm-bg);border-color:var(--dnm);color:var(--dnm)}
+.sp5 .s3 input:checked+span{background:var(--meets-bg);border-color:var(--meets);color:var(--meets)}
+.sp5 .s4 input:checked+span,.sp5 .s5 input:checked+span{background:var(--exc-bg);border-color:var(--exc);color:var(--exc)}
+.sp5 .s0 input:checked+span{background:#fff;border-color:var(--ink);color:var(--ink)}
+.pickopt input:checked+span{background:var(--ink);border-color:var(--ink);color:#fff}
 .ghost.msel{background:var(--w-bg);border-color:var(--w);color:var(--w);font-weight:600}
 .notes-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px}
 .qlist{margin:6px 0 0;padding-left:20px;font-size:13.5px}
@@ -374,10 +385,48 @@ async function loadQA() {
   render();
 }
 function callsFor(name) {
-  if (!QA) return [];
-  return QA.calls.filter(c => c.advisor === name).sort((a, b) => String(b.interactionDate).localeCompare(String(a.interactionDate)));
+  return (QA ? QA.calls.filter(c => c.advisor === name) : []).concat(Object.values(MANUAL).filter(c => c.advisor === name)).sort((a, b) => String(b.interactionDate).localeCompare(String(a.interactionDate)));
 }
-function callById(id) { return QA ? QA.calls.find(c => c.interactionId === id) : null; }
+function callById(id) { return MANUAL[id] || (QA ? QA.calls.find(c => c.interactionId === id) : null); }
+let MANUAL = {}, manualLoaded = false;
+const DBQ = DB.replace(/grow_coaching$/, 'grow_qa_manual');
+const WEIGHTS = { connect: 10, explore: 40, qualityOfAdvice: 30, resolve: 20 };
+function scoreRating(v) { return v >= 4 ? 'Exceeds' : v >= 3 ? 'Meets' : 'Does Not Meet'; }
+function normManual(c) {
+  c.manual = true;
+  c.interactionId = c.id;
+  c.interactionDate = c.callDate || ((c.qaMonth || '') + '-01');
+  c.questions = c.questions || {};
+  QK.forEach(k => { const q = c.questions[k]; if (q && isNum(q.score)) q.rating = scoreRating(q.score); });
+  c.scored = QK.some(k => c.questions[k] && isNum(c.questions[k].score));
+  c.sections = {};
+  let tw = 0, tot = 0;
+  SECTIONS.forEach(s => {
+    const v = s.qs.map(k => c.questions[k] && c.questions[k].score).filter(isNum);
+    if (v.length) { const pct = avg(v) * 20; c.sections[s.key] = { pct }; tw += WEIGHTS[s.key]; tot += pct * WEIGHTS[s.key]; }
+  });
+  c.overallScore = tw ? Math.round(tot / tw) : null;
+  c.compliance = c.compliance || {};
+  c.result = c.compliance.result === 'Fail' ? 'Auto-Fail' : c.scored ? 'Pass' : '';
+  return c;
+}
+async function loadManual() {
+  try {
+    const r = await fetch(DBQ + '.json', { cache: 'no-store' });
+    const d = (await r.json()) || {};
+    MANUAL = {};
+    Object.keys(d).forEach(k => { if (d[k]) MANUAL[k] = normManual(Object.assign({ id: k }, d[k])); });
+  } catch (e) { toast('Could not load manually entered QA calls', true); }
+  render();
+}
+function cdl(c) {
+  if (c.manual && !c.callDate) return (c.qaMonth ? monthLabel(c.qaMonth) : 'No date') + (c.label ? ', ' + c.label : '');
+  return fmtDate(c.interactionDate) + (c.manual && c.label ? ', ' + c.label : '');
+}
+function resultPill(c) {
+  if (c.manual && !c.scored) return '<span class="pill st-prep">To score</span>';
+  return c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">Pass</span>';
+}
 function inWindow(calls, w) {
   if (w === 'all') return calls;
   const from = addDays(today(), -(+w));
@@ -489,10 +538,10 @@ function brief(calls) {
   L.push('Question averages: ' + QK.map(k => k.toUpperCase() + ' ' + (isNum(st.q[k]) ? st.q[k].toFixed(1) : 'n/a')).join(', ') + '.');
   calls.slice().sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate))).forEach(c => {
     L.push('');
-    L.push('CALL ' + fmtDate(c.interactionDate) + ' | ' + (c.callType || '') + ' | ' + (c.duration || '') + ' | overall ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'n/a') + ' | ' + (c.result || ''));
+    L.push('CALL ' + cdl(c) + ' | ' + (c.callType || '') + ' | ' + (c.duration || '') + ' | overall ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'n/a') + ' | ' + (c.result || ''));
     const comp = c.compliance || {};
     const cf = (comp.checklist || []).filter(x => x.status && x.status !== 'Pass');
-    L.push('Compliance: ' + (comp.result || 'n/a') + (cf.length ? '. Failed: ' + cf.map(x => x.requirement + ' (' + clip(x.evidence, 220) + ')').join('; ') : ''));
+    L.push('Compliance: ' + (comp.result || 'n/a') + (cf.length ? '. Failed: ' + cf.map(x => x.requirement + ' (' + clip(x.evidence, 220) + ')').join('; ') : '') + (comp.note ? '. Note: ' + clip(comp.note, 300) : ''));
     if (c.questions) QK.forEach(k => {
       const q = c.questions[k]; if (!q) return;
       let line = k.toUpperCase() + ' ' + QTEXT[k] + ': ' + (q.rating || 'n/a') + (isNum(q.score) ? ' (' + q.score + '/5)' : '') + '. ' + clip(q.rationale, 380);
@@ -604,6 +653,8 @@ function normPlan(r) {
 async function buildPlan(s) {
   const calls = (s.callIds || []).map(callById).filter(Boolean);
   if (!calls.length && !((s.prep || {}).observations || (s.prep || {}).goal)) { toast('Tick some QA calls or add your observations first.', true); return; }
+  const unscored = calls.filter(c => c.manual && !c.scored);
+  if (unscored.length) { toast('Score ' + unscored.map(cdl).join(' and ') + ' first, or untick ' + (unscored.length > 1 ? 'them' : 'it') + '.', true); return; }
   s.qaBrief = brief(calls);
   busy('Reading ' + calls.length + ' QA call' + (calls.length === 1 ? '' : 's') + ' for ' + first(s.adviser) + '…');
   try {
@@ -640,7 +691,7 @@ function route() {
 }
 function render() {
   const r = route();
-  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === r.page || (r.page === 'adviser' && a.dataset.nav === 'advisers') || (r.page === 'session' && a.dataset.nav === 'sessions')));
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === r.page || ((r.page === 'adviser' || r.page === 'qa') && a.dataset.nav === 'advisers') || (r.page === 'session' && a.dataset.nav === 'sessions')));
   const open = Object.values(SESS).filter(s => s && !s.complete).length;
   $('#openCount').textContent = open ? open + ' open' : '';
   const m = $('#main');
@@ -648,6 +699,7 @@ function render() {
   else if (r.page === 'session') m.innerHTML = vSession(r.a, r.b);
   else if (r.page === 'sessions') m.innerHTML = vSessions();
   else if (r.page === 'guide') m.innerHTML = vGuide();
+  else if (r.page === 'qa') m.innerHTML = vQaForm(r.a, r.b);
   else m.innerHTML = vAdvisers();
 }
 function loadingNote() {
@@ -670,7 +722,7 @@ function vAdvisers() {
       const ss = sessionsFor(a.name), last = ss[0];
       const ov = st.overall, r = ratingPct(ov);
       h += '<div class="card adv ' + pt.toLowerCase() + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
-      h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + fmtDate(calls[0].interactionDate, false) : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
+      h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + cdl(calls[0]) : a.partner === 'MBS' ? 'QA entered manually, none yet' : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
       h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>last ' + (last5.length || 5) + ' calls</span></div></div>';
       if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
       h += '<div class="adv-f">';
@@ -685,9 +737,9 @@ function vAdvisers() {
 }
 function callRow(c) {
   const open = openCalls.has(c.interactionId);
-  const res = c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">' + esc(c.result || 'Pass') + '</span>';
+  const res = resultPill(c);
   let h = '<div class="call' + (open ? ' open' : '') + '"><div class="call-h" data-act="toggle-call" data-cid="' + esc(c.interactionId) + '">';
-  h += '<span></span><span class="mono">' + fmtDate(c.interactionDate) + '</span><span class="ty">' + esc(c.callType || '') + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span>' + res + '<span class="foc">' + esc(clip(c.primaryCoachingFocus, 140)) + '</span><span class="car">›</span></div>';
+  h += '<span></span><span class="mono">' + esc(cdl(c)) + '</span><span class="ty">' + esc(c.callType || '') + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span>' + res + '<span class="foc">' + esc(clip(c.primaryCoachingFocus, 140)) + '</span><span class="car">›</span></div>';
   if (open) h += '<div class="call-d">' + callDetail(c) + '</div>';
   return h + '</div>';
 }
@@ -695,6 +747,7 @@ function callDetail(c) {
   let h = '';
   const comp = c.compliance || {};
   const cf = (comp.checklist || []).filter(x => x.status && x.status !== 'Pass');
+  if (c.manual) h += '<div class="row" style="margin-bottom:6px"><span class="pill st-prep">Entered manually</span><a href="#/qa/' + encodeURIComponent(c.advisor) + '/' + c.id + '">' + (c.scored ? 'Edit this call' : 'Score this call') + '</a></div>' + (comp.note ? '<div class="kv"><b>Compliance note</b>' + esc(comp.note) + '</div>' : '');
   if (cf.length) h += '<div class="kv"><b>Compliance</b><ul class="fail-list">' + cf.map(x => '<li><strong>' + esc(x.requirement) + '</strong></li>').join('') + '</ul></div>';
   if (c.questions) {
     h += '<div class="qd">' + QK.map(k => {
@@ -718,9 +771,9 @@ function vAdviser(name) {
   const all = callsFor(name), calls = inWindow(all, winSel), st = stats(calls), weak = weakest(st, 2);
   const ss = sessionsFor(name);
   let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / ' + esc(a.partner) + '</div>';
-  h += '<div class="ph"><div><h1>' + esc(name) + '</h1><p>' + all.length + ' QA calls on the dashboard. ' + ss.length + ' coaching session' + (ss.length === 1 ? '' : 's') + ' recorded.</p></div><div class="sp"></div>';
+  h += '<div class="ph"><div><h1>' + esc(name) + '</h1><p>' + all.length + ' QA calls' + (all.some(c => c.manual) ? ' (' + all.filter(c => c.manual).length + ' entered manually, ' + all.filter(c => c.manual && !c.scored).length + ' to score)' : ' from the QA dashboard') + '. ' + ss.length + ' coaching session' + (ss.length === 1 ? '' : 's') + ' recorded.</p></div><div class="sp"></div>';
   h += '<div class="seg">' + [['30', '30 days'], ['90', '90 days'], ['all', 'All']].map(w => '<button data-act="win" data-win="' + w[0] + '" class="' + (winSel === w[0] ? 'on' : '') + '">' + w[1] + '</button>').join('') + '</div>';
-  h += '<button class="btn green" data-act="new-session" data-adviser="' + esc(name) + '">Start coaching session</button></div>';
+  h += '<button class="ghost" data-act="go" data-href="#/qa/' + encodeURIComponent(name) + '/new">+ Add QA call</button><button class="btn green" data-act="new-session" data-adviser="' + esc(name) + '">Start coaching session</button></div>';
   h += loadingNote();
   h += '<div class="tiles"><div class="tile"><span>Calls in view</span><b>' + calls.length + '</b></div><div class="tile ' + ratingPct(st.overall).cls + '" title="As on the QA dashboard, an auto-fail counts as 0%"><span>Average score' + (st.fails && isNum(st.raw) ? ' (' + Math.round(st.raw) + '% before auto-fails)' : '') + '</span><b style="color:var(--bc)">' + (isNum(st.overall) ? Math.round(st.overall) + '%' : '–') + '</b></div><div class="tile"><span>Compliance fails</span><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b></div><div class="tile"><span>Last coached</span><b style="font-size:18px">' + (ss.find(x => x.complete) ? fmtDate(ss.find(x => x.complete).date) : 'Not yet') + '</b></div></div>';
   h += '<div class="split"><div class="card"><h2>Sections</h2><p class="sub">Average across the calls in view, on the 1 to 5 scale</p>';
@@ -733,6 +786,56 @@ function vAdviser(name) {
   h += '<div class="section-t"><h2>QA calls</h2><span class="chip">' + calls.length + ' in view</span></div>';
   h += '<div class="card">' + (calls.length ? '<div class="calls">' + calls.map(callRow).join('') + '</div>' : '<div class="empty">' + (QA ? 'No QA calls in this period.' : 'QA data not loaded.') + '</div>') + '</div>';
   return h;
+}
+function vQaForm(name, id) {
+  const a = ADVISERS.find(x => x.name === name);
+  if (!a) return '<div class="empty">Adviser not found.</div>';
+  const isNew = !id || id === 'new';
+  const c = isNew ? null : MANUAL[id];
+  if (!isNew && !c) return '<div class="empty">' + (manualLoaded ? 'QA call not found. <a href="#/adviser/' + encodeURIComponent(name) + '">Back</a>' : 'Loading…') + '</div>';
+  const q = (c && c.questions) || {}, comp = (c && c.compliance) || {};
+  const months = []; for (let i = 0; i < 6; i++) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); months.push(iso(d).slice(0, 7)); }
+  const curM = (c && c.qaMonth) || months[1];
+  if (!months.includes(curM)) months.push(curM);
+  let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / <a href="#/adviser/' + encodeURIComponent(name) + '">' + esc(name) + '</a></div>';
+  h += '<div class="ph"><div><h1>' + (isNew ? 'Add QA call' : c.scored ? 'Edit QA call' : 'Score QA call') + '</h1><p>For calls that are not on the QA dashboard. Scores use the FY27 rubric, so they show and feed the insights like dashboard calls.</p></div></div>';
+  h += '<div class="card" style="margin-bottom:14px"><h2>Call details</h2><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">';
+  h += '<div><label class="f">QA month</label><select class="in" id="f-month">' + months.map(m => '<option value="' + m + '"' + (m === curM ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('') + '</select></div>';
+  h += '<div><label class="f">Call date (optional)</label><input class="in" type="date" id="f-date" value="' + esc((c && c.callDate) || '') + '"></div>';
+  h += '<div><label class="f">Label</label><input class="in" id="f-label" value="' + esc((c && c.label) || '') + '" placeholder="For example: Call 1"></div>';
+  h += '<div><label class="f">Call type</label><select class="in" id="f-type">' + ['Outbound', 'Inbound'].map(t => '<option' + (c && c.callType === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div></div>';
+  h += '<label class="f">Genesys link</label><input class="in" id="f-link" value="' + esc((c && c.transcriptUrl) || '') + '" placeholder="https://apps.mypurecloud.com.au/...">' + (c && c.transcriptUrl ? '<div style="margin-top:6px;font-size:13px"><a href="' + esc(c.transcriptUrl) + '" target="_blank" rel="noopener">Open the call in Genesys</a></div>' : '') + '</div>';
+  h += '<div class="card" style="margin-bottom:14px"><h2>Compliance</h2><p class="sub">Recording disclosure, then full name plus student ID or personal email before any account discussion. A fail is an auto-fail.</p><div class="row">' + ['Pass', 'Fail'].map(v => '<label class="pickopt"><input type="radio" name="f-comp" value="' + v + '"' + ((comp.result || 'Pass') === v ? ' checked' : '') + '><span>' + v + '</span></label>').join('') + '</div><label class="f">Compliance note</label><textarea class="in" rows="2" id="f-compnote" placeholder="What was missed, if anything">' + esc(comp.note || '') + '</textarea></div>';
+  h += '<div class="grid g2">' + SECTIONS.map(s => '<div class="card"><h2>' + s.label + '</h2>' + s.qs.map(k => {
+    const x = q[k] || {};
+    return '<div class="qform"><label class="f">' + k.toUpperCase() + ' ' + esc(QTEXT[k]) + '</label><div class="sp5">' + [1, 2, 3, 4, 5].map(v => '<label class="s' + v + '"><input type="radio" name="f-' + k + '" value="' + v + '"' + (x.score === v ? ' checked' : '') + '><span>' + v + '</span></label>').join('') + '<label class="s0"><input type="radio" name="f-' + k + '" value=""' + (!isNum(x.score) ? ' checked' : '') + '><span>Not scored</span></label></div><textarea class="in" rows="2" id="f-c-' + k + '" placeholder="Comment">' + esc(x.rationale || '') + '</textarea></div>';
+  }).join('') + '</div>').join('') + '</div>';
+  h += '<div class="card" style="margin-top:14px"><h2>Overall</h2><label class="f">Main coaching focus</label><input class="in" id="f-focus" value="' + esc((c && c.primaryCoachingFocus) || '') + '"><label class="f">Overall comments</label><textarea class="in" rows="3" id="f-rec">' + esc((c && c.coachingRecommendation) || '') + '</textarea><label class="f">Strengths</label><textarea class="in" rows="2" id="f-str">' + esc(toText(c && c.strengths)) + '</textarea>';
+  h += '<div class="actions"><button class="btn green" data-act="qa-save" data-adviser="' + esc(name) + '" data-id="' + (isNew ? '' : esc(id)) + '">Save QA call</button><button class="ghost" data-act="go" data-href="#/adviser/' + encodeURIComponent(name) + '">Cancel</button>' + (isNew ? '' : '<span style="flex:1"></span><button class="link danger" data-act="qa-del" data-adviser="' + esc(name) + '" data-id="' + esc(id) + '">Delete this call</button>') + '</div></div>';
+  return h;
+}
+async function saveQa(name, id) {
+  const v = sel => { const e = document.querySelector(sel); return e ? e.value.trim() : ''; };
+  const radio = n => { const e = document.querySelector('input[name="' + n + '"]:checked'); return e ? e.value : ''; };
+  const a = ADVISERS.find(x => x.name === name) || {};
+  const old = id ? MANUAL[id] : null;
+  id = id || uid();
+  const questions = {};
+  QK.forEach(k => { const sc = radio('f-' + k), cm = v('#f-c-' + k); if (sc || cm) questions[k] = { score: sc ? +sc : null, rationale: cm }; });
+  const rec = {
+    id, advisor: name, partner: a.partner || '', label: v('#f-label'), qaMonth: v('#f-month'), callDate: v('#f-date'), callType: v('#f-type'), transcriptUrl: v('#f-link'),
+    compliance: { result: radio('f-comp') || 'Pass', note: v('#f-compnote') }, questions,
+    primaryCoachingFocus: v('#f-focus'), coachingRecommendation: v('#f-rec'), strengths: v('#f-str'),
+    createdAt: (old && old.createdAt) || Date.now(), updatedAt: Date.now()
+  };
+  if (rec.callDate) rec.qaMonth = rec.callDate.slice(0, 7);
+  try {
+    const r = await fetch(DBQ + '/' + id + '.json', { method: 'PUT', body: JSON.stringify(rec) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    MANUAL[id] = normManual(JSON.parse(JSON.stringify(rec)));
+    toast('QA call saved');
+    location.hash = '#/adviser/' + encodeURIComponent(name);
+  } catch (e) { toast('Could not save: ' + (e.message || e), true); }
 }
 function histCard(s) {
   const so = statusOf(s), t = (s.outcome && s.outcome.hibob && s.outcome.hibob.title) || (s.plan && s.plan.focus) || 'Session in preparation';
@@ -792,7 +895,7 @@ function vPrep(s) {
   const p = s.prep || {};
   let h = loadingNote() + '<div class="split"><div class="card"><h2>QA calls to cover</h2><p class="sub">Tick the evaluations this session should draw on</p>';
   h += '<div class="row">' + monthsOf(all).slice(0, 4).map(m => '<button class="ghost' + (isMonthSel(all, sel, m) ? ' msel' : '') + '" data-act="preset" data-preset="m:' + m + '">' + monthLabel(m) + ' <span class="mono" style="color:var(--muted)">' + all.filter(c => String(c.interactionDate).startsWith(m)).length + '</span></button>').join('') + '<button class="ghost" data-act="preset" data-preset="5">Last 5</button><button class="ghost" data-act="preset" data-preset="fails">Compliance fails</button><button class="ghost" data-act="preset" data-preset="none">Clear</button><span style="margin-left:auto;font-size:13px;color:var(--muted)">' + sel.size + ' ticked</span></div>';
-  h += '<div class="pick-list">' + (all.length ? all.map(c => '<label class="pick"><input type="checkbox" data-call="' + esc(c.interactionId) + '"' + (sel.has(c.interactionId) ? ' checked' : '') + '><span class="mono">' + fmtDate(c.interactionDate) + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span><span class="res">' + (c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">Pass</span>') + '</span><span class="foc" title="' + esc(toText(c.primaryCoachingFocus)) + '">' + esc(clip(c.primaryCoachingFocus, 120)) + '</span></label>').join('') : '<div class="empty">' + (QA ? 'No QA calls for ' + esc(first(s.adviser)) + ' on the dashboard. Work from your notes.' : 'QA data not loaded.') + '</div>') + '</div></div>';
+  h += '<div class="pick-list">' + (all.length ? all.map(c => '<label class="pick"><input type="checkbox" data-call="' + esc(c.interactionId) + '"' + (sel.has(c.interactionId) ? ' checked' : '') + '><span class="mono">' + esc(cdl(c)) + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span><span class="res">' + resultPill(c) + '</span>' + (c.manual && !c.scored ? '<a class="foc" href="#/qa/' + encodeURIComponent(c.advisor) + '/' + c.id + '">Score this call</a>' : '<span class="foc" title="' + esc(toText(c.primaryCoachingFocus)) + '">' + esc(clip(c.primaryCoachingFocus, 120)) + '</span>') + '</label>').join('') : '<div class="empty">' + (QA ? 'No QA calls for ' + esc(first(s.adviser)) + ' on the dashboard. Work from your notes.' : 'QA data not loaded.') + '</div>') + '</div></div>';
   h += '<div class="grid"><div class="card"><h2>Snapshot of ticked calls</h2>';
   if (picked.length) {
     h += '<div class="row" style="gap:18px;margin-bottom:10px"><div class="score ' + ratingPct(st.overall).cls + '"><b style="color:var(--bc)">' + Math.round(st.overall || 0) + '%</b><span>average</span></div><div class="score"><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b><span>compliance fails</span></div></div><div class="mini">' + secBars(st) + '</div>';
@@ -801,7 +904,7 @@ function vPrep(s) {
   h += '</div><div class="card"><h2>Your preparation</h2>';
   h += '<label class="f">Your observations</label><textarea class="in" rows="4" data-bind="prep.observations" placeholder="What have you noticed in their calls, behaviour or results? Patterns, strengths, moments that stood out.">' + esc(p.observations || '') + '</textarea>';
   h += '<label class="f">What you want from this session</label><textarea class="in" rows="2" data-bind="prep.goal" placeholder="For example: leave with one clear habit to confirm understanding before giving advice.">' + esc(p.goal || '') + '</textarea>';
-  h += '<label class="f">Anything else you want to cover</label><textarea class="in" rows="3" data-bind="prep.questions" placeholder="Other topics, wins to recognise, or things the adviser has raised with you.">' + esc(p.questions || '') + '</textarea>';
+  h += '<label class="f">Questions or anything else to cover</label><textarea class="in" rows="3" data-bind="prep.questions" placeholder="Questions you want to ask, other topics, or wins to recognise.">' + esc(p.questions || '') + '</textarea>';
   h += '<div class="actions"><button class="btn green" data-act="build">' + (s.plan ? 'Rebuild QA insights' : 'Build QA insights') + '</button>' + (s.plan ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/plan">View current insights</button>' : '') + '</div></div></div></div>';
   return h;
 }
@@ -894,6 +997,14 @@ document.addEventListener('click', e => {
   if (act === 'new-session') { newSession(t.dataset.adviser); return; }
   if (act === 'reload-qa') { QAerr = ''; render(); loadQA(); return; }
   if (act === 'key') { openKey(); return; }
+  if (act === 'qa-save') { saveQa(t.dataset.adviser, t.dataset.id); return; }
+  if (act === 'qa-del') {
+    if (!confirm('Delete this QA call? This cannot be undone.')) return;
+    fetch(DBQ + '/' + t.dataset.id + '.json', { method: 'DELETE' }).then(() => toast('QA call deleted')).catch(() => toast('Could not delete', true));
+    delete MANUAL[t.dataset.id];
+    location.hash = '#/adviser/' + encodeURIComponent(t.dataset.adviser);
+    return;
+  }
   if (act === 'key-close') { $('#keyDlg').close(); return; }
   if (act === 'key-save') { const v = $('#keyIn').value.trim(); if (v) { try { localStorage.setItem('grow-gemini-key', v); } catch (x) { } toast('Key saved in this browser'); } $('#keyDlg').close(); return; }
   if (act === 'key-clear') { try { localStorage.removeItem('grow-gemini-key'); } catch (x) { } toast('Key removed'); $('#keyDlg').close(); return; }
@@ -948,6 +1059,7 @@ window.addEventListener('beforeunload', e => { if ($('#saveState').textContent =
 if (!location.hash) location.hash = '#/advisers';
 render();
 loadSessions();
+loadManual().then(() => { manualLoaded = true; render(); });
 loadQA();
 </script>
 </body>

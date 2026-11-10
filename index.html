@@ -1,1163 +1,933 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GROW Coaching Portal | Keypath Education</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230B1C38'/%3E%3Cpath fill='%232AACE2' d='M21.5 20.2l-2.8-1.2c-.4-.2-.9 0-1.1.4l-.6 1.3c-2.2-.9-4-2.7-4.9-4.9l1.3-.6c.4-.2.6-.7.4-1.1L12.6 11c-.2-.4-.7-.6-1.1-.5l-2.5.7C8.6 11.3 8 12 8 12.9c0 5.8 4.7 10.5 10.5 10.5.9 0 1.6-.6 1.7-1.5l.7-2.5c.1-.5-.1-.9-.4-1.2z'/%3E%3C/svg%3E">
+<title>Pod C GROW Coaching</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231f9461'/%3E%3Cpath d='M32 50V30' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M32 34c0-9 6-15 16-15 0 10-6 15-16 15zM32 30c0-7-5-12-13-12 0 8 5 12 13 12z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --kp-navy: #0B1C38;
-  --kp-blue: #2AACE2;
-  --kp-blue-dark: #1A8FBF;
-  --kp-light: #E8F5FC;
-  --kp-green: #00843D;
-  --kp-green-light: #E6F4EC;
-  --kp-red: #C8102E;
-  --kp-red-light: #FDECEA;
-  --kp-amber: #F59E0B;
-  --kp-amber-light: #FEF3C7;
-  --sidebar-w: 260px;
-  --radius: 10px;
+:root{
+  --bg:#f3f2ee;--panel:#fff;--ink:#24262b;--muted:#61656d;--faint:#a2a4aa;--line:#e6e3dc;--field:#f6f5f1;--fieldhover:#ece9e3;--focus:#4a7bd8;
+  --g:#3d68cc;--g-bg:#e7edfb;--r:#c76a1c;--r-bg:#fdeedd;--o:#6a5be0;--o-bg:#efedff;--w:#1f9461;--w-bg:#e1f5ea;
+  --dnm:#e23950;--dnm-bg:#ffe9ec;--meets:#a67c00;--meets-bg:#fff3bf;--exc:#17a673;--exc-bg:#e3f8ef;
+  --unsw:#f2b705;--unsw-ink:#4a3500;--unsw-soft:#fff6d6;--mbs:#0b5cb0;--mbs-soft:#e5effb;
+  --shadow:0 1px 2px rgba(36,38,43,.05);
+  --sans:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--display:"Bricolage Grotesque","DM Sans",system-ui,sans-serif;--mono:"Geist Mono",ui-monospace,Consolas,monospace;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: #F0F4F8; color: #1a2533; min-height: 100vh; display: flex; }
-
-/* ── Sidebar ── */
-#sidebar {
-  width: var(--sidebar-w); min-height: 100vh; background: var(--kp-navy);
-  color: #fff; display: flex; flex-direction: column;
-  position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100;
-}
-.sidebar-header { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.logo-squares { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 26px; }
-.logo-squares span { width: 11px; height: 11px; border-radius: 2px; background: var(--kp-blue); display: block; }
-.logo-squares span:last-child { opacity: 0.4; }
-.logo-text { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
-.logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-left: 36px; }
-
-.tl-selector { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.tl-selector label { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block; }
-.tl-selector select { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: inherit; cursor: pointer; }
-.tl-selector select option { background: var(--kp-navy); }
-
-.sidebar-nav { flex: 1; padding: 12px 0; }
-.nav-section { padding: 8px 18px 4px; font-size: 10px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; color: rgba(255,255,255,0.7); font-size: 13px; transition: all 0.15s; border-left: 3px solid transparent; }
-.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
-.nav-item.active { background: rgba(42,172,226,0.15); color: var(--kp-blue); border-left-color: var(--kp-blue); }
-.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-.sidebar-footer { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: rgba(255,255,255,0.35); }
-
-/* ── Main ── */
-#main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
-.topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-.topbar-title { font-size: 16px; font-weight: 600; color: var(--kp-navy); }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
-.btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; border: none; transition: all 0.15s; }
-.btn-primary { background: var(--kp-blue); color: #fff; }
-.btn-primary:hover { background: var(--kp-blue-dark); }
-.btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.btn-secondary:hover { background: #e2e8f0; }
-.btn-danger { background: var(--kp-red-light); color: var(--kp-red); }
-.btn-success { background: var(--kp-green-light); color: var(--kp-green); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.page { display: none; padding: 28px; }
-.page.active { display: block; }
-
-/* ── Dashboard ── */
-.page-header { margin-bottom: 24px; }
-.page-header h1 { font-size: 22px; font-weight: 700; color: var(--kp-navy); margin-bottom: 4px; }
-.page-header p { color: #64748b; font-size: 14px; }
-
-.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-.stat-card { background: #fff; border-radius: var(--radius); padding: 18px 20px; border: 1px solid #e2e8f0; }
-.stat-card .label { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500; }
-.stat-card .value { font-size: 28px; font-weight: 700; color: var(--kp-navy); }
-.stat-card .sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
-
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.section-header h2 { font-size: 15px; font-weight: 600; color: var(--kp-navy); }
-
-.session-list { display: flex; flex-direction: column; gap: 10px; }
-.session-card { background: #fff; border-radius: var(--radius); padding: 16px 20px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s; }
-.session-card:hover { border-color: var(--kp-blue); box-shadow: 0 2px 8px rgba(42,172,226,0.12); }
-.session-card-left { display: flex; align-items: center; gap: 14px; }
-.advisor-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--kp-light); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--kp-blue); flex-shrink: 0; }
-.session-info h3 { font-size: 14px; font-weight: 600; color: var(--kp-navy); margin-bottom: 2px; }
-.session-info p { font-size: 12px; color: #64748b; }
-.session-card-right { display: flex; align-items: center; gap: 12px; }
-.badge { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-.badge-draft { background: #f1f5f9; color: #64748b; }
-.badge-progress { background: var(--kp-amber-light); color: #92400e; }
-.badge-complete { background: var(--kp-green-light); color: var(--kp-green); }
-.badge-group { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; background: var(--kp-red-light); color: var(--kp-red); }
-
-.empty-state { text-align: center; padding: 48px 24px; color: #94a3b8; }
-.empty-state svg { width: 48px; height: 48px; margin: 0 auto 12px; opacity: 0.4; }
-.empty-state p { font-size: 14px; margin-bottom: 16px; }
-
-/* ── New Session ── */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.card { background: #fff; border-radius: var(--radius); border: 1px solid #e2e8f0; overflow: hidden; }
-.card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
-.card-header h2 { font-size: 14px; font-weight: 600; color: var(--kp-navy); }
-.card-header p { font-size: 12px; color: #64748b; }
-.card-body { padding: 20px; }
-
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-group input, .form-group select, .form-group textarea {
-  width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 7px;
-  font-family: inherit; font-size: 13px; color: #1a2533; background: #fff;
-  transition: border-color 0.15s;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-  outline: none; border-color: var(--kp-blue); box-shadow: 0 0 0 3px rgba(42,172,226,0.1);
-}
-.form-group textarea { resize: vertical; min-height: 200px; font-size: 12px; line-height: 1.6; }
-.transcript-area { min-height: 360px; font-family: 'Courier New', monospace; }
-
-/* ── Analysis Results ── */
-.analysis-panel { display: none; }
-.analysis-panel.visible { display: block; }
-
-.goal-box { background: linear-gradient(135deg, var(--kp-navy) 0%, #1a3a6b 100%); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px; color: #fff; }
-.goal-box .label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-.goal-box .goal-text { font-size: 16px; font-weight: 600; line-height: 1.5; }
-
-.groups-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-.group-chip { background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
-.group-chip.flagged { border-color: var(--kp-red); background: var(--kp-red-light); }
-.group-chip.ok { border-color: #e2e8f0; }
-.group-chip .g-name { font-size: 12px; font-weight: 600; color: var(--kp-navy); margin-bottom: 3px; }
-.group-chip.flagged .g-name { color: var(--kp-red); }
-.group-chip .g-status { font-size: 11px; color: #94a3b8; }
-.group-chip.flagged .g-status { color: #e05252; }
-
-.strengths-list, .development-list { list-style: none; }
-.strengths-list li, .development-list li { padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
-.strengths-list li:last-child, .development-list li:last-child { border-bottom: none; }
-.strengths-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--kp-green); margin-top: 5px; flex-shrink: 0; }
-.development-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--kp-red); margin-top: 5px; flex-shrink: 0; }
-
-/* ── GROW Session ── */
-.grow-stages { display: flex; flex-direction: column; gap: 16px; }
-.grow-stage { background: #fff; border-radius: var(--radius); border: 1px solid #e2e8f0; overflow: hidden; }
-.stage-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-.stage-letter { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
-.stage-G .stage-letter { background: #DBEAFE; color: #1D4ED8; }
-.stage-R .stage-letter { background: #FEE2E2; color: #B91C1C; }
-.stage-O .stage-letter { background: #FEF3C7; color: #B45309; }
-.stage-W .stage-letter { background: #D1FAE5; color: #065F46; }
-.stage-title { font-size: 14px; font-weight: 600; color: var(--kp-navy); }
-.stage-sub { font-size: 12px; color: #94a3b8; }
-.stage-chevron { margin-left: auto; color: #94a3b8; transition: transform 0.2s; }
-.stage-header.open .stage-chevron { transform: rotate(180deg); }
-
-.stage-body { display: none; padding: 0 20px 20px; border-top: 1px solid #f1f5f9; }
-.stage-body.open { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-top: 18px; }
-
-.q-list { list-style: none; margin-bottom: 14px; }
-.q-list li { padding: 8px 12px; background: #f8fafc; border-radius: 6px; font-size: 12px; color: #475569; margin-bottom: 6px; line-height: 1.5; border-left: 3px solid var(--kp-blue); }
-
-.notes-area textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 7px; padding: 10px 12px; font-family: inherit; font-size: 12px; line-height: 1.6; resize: vertical; min-height: 120px; }
-.notes-area textarea:focus { outline: none; border-color: var(--kp-blue); }
-.notes-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-.commit-box { margin-top: 10px; }
-.commit-box input { width: 100%; border: 1px solid #e2e8f0; border-radius: 7px; padding: 8px 12px; font-family: inherit; font-size: 12px; }
-.commit-box input:focus { outline: none; border-color: var(--kp-green); box-shadow: 0 0 0 3px rgba(0,132,61,0.1); }
-
-/* ── Email Draft ── */
-.email-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; font-size: 13px; line-height: 1.8; color: #334155; white-space: pre-wrap; }
-.email-header { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px 8px 0 0; padding: 12px 16px; border-bottom: none; }
-.email-header span { font-size: 12px; color: #64748b; }
-.email-header strong { color: var(--kp-navy); }
-
-/* ── Advisor History ── */
-.advisor-profile { display: flex; align-items: center; gap: 18px; background: #fff; border-radius: var(--radius); border: 1px solid #e2e8f0; padding: 20px 24px; margin-bottom: 20px; }
-.advisor-avatar-lg { width: 56px; height: 56px; border-radius: 50%; background: var(--kp-light); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: var(--kp-blue); flex-shrink: 0; }
-.advisor-info h2 { font-size: 18px; font-weight: 700; color: var(--kp-navy); }
-.advisor-info p { font-size: 13px; color: #64748b; }
-.advisor-stats { display: flex; gap: 28px; margin-left: auto; text-align: center; }
-.adv-stat .v { font-size: 22px; font-weight: 700; color: var(--kp-navy); }
-.adv-stat .l { font-size: 11px; color: #94a3b8; }
-
-/* ── Loading ── */
-.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(11,28,56,0.6); z-index: 200; align-items: center; justify-content: center; }
-.loading-overlay.visible { display: flex; }
-.loading-card { background: #fff; border-radius: 14px; padding: 32px 40px; text-align: center; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: var(--kp-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-card p { font-size: 14px; color: #64748b; }
-.loading-card strong { display: block; font-size: 16px; color: var(--kp-navy); margin-bottom: 6px; }
-
-/* ── Toast ── */
-.toast { position: fixed; bottom: 24px; right: 24px; background: var(--kp-navy); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 300; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
-.toast.show { transform: translateY(0); opacity: 1; }
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
-  .two-col, .groups-row, .stage-body.open { grid-template-columns: 1fr; }
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .form-row { grid-template-columns: 1fr; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14.5px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--g)}
+button{font:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--ink)}
+h1,h2,h3{font-family:var(--display);margin:0;letter-spacing:-.01em}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:12px 22px;background:#fff;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{display:block;font-family:var(--display);font-size:18px;line-height:1.1}
+.brand span{display:block;font-size:12px;color:var(--muted)}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--field);border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.chip.ok i{background:var(--exc)}.chip.err i{background:var(--dnm)}.chip.load i{background:var(--meets)}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--ink)}
+.ghost:hover{background:var(--field)}
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 59px)}
+.side{padding:18px 12px;border-right:1px solid var(--line);background:#fbfaf8}
+.side a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:var(--ink);text-decoration:none;font-weight:500;margin-bottom:2px}
+.side a i{width:10px;height:10px;border-radius:3px;background:var(--nc)}
+.side a:hover{background:var(--field)}
+.side a.on{background:#fff;box-shadow:var(--shadow);border:1px solid var(--line)}
+.side a b{margin-left:auto;font:500 11px var(--mono);color:var(--muted)}
+.side .hint{margin:22px 12px 0;font-size:12px;color:var(--muted)}
+main{padding:24px 28px 60px;min-width:0;max-width:1320px}
+.ph{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.ph h1{font-size:26px}
+.ph p{margin:4px 0 0;color:var(--muted)}
+.ph .sp{flex:1}
+.crumb{font-size:13px;color:var(--muted);margin-bottom:6px}
+.crumb a{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:9px;padding:9px 16px;background:var(--ink);color:#fff;font-weight:600}
+.btn:hover{background:#3a3d44}
+.btn.green{background:var(--w)}.btn.green:hover{background:#18784e}
+.btn.blue{background:var(--g)}.btn.blue:hover{background:#2f55ad}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sm{padding:6px 12px;font-size:13px}
+.link{background:none;border:0;padding:0;color:var(--g);font-weight:500}
+.danger{color:var(--dnm)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px;min-width:0}
+.card h2{font-size:17px;margin-bottom:10px}
+.card h3{font-size:15px}
+.card .sub{color:var(--muted);font-size:13px;margin:-6px 0 12px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+.section-t{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+.section-t h2{font-size:18px}
+.section-t .tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px}
+.tag.unsw{background:var(--unsw-soft);color:var(--unsw-ink)}
+.tag.mbs{background:var(--mbs-soft);color:var(--mbs)}
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.adv{cursor:pointer;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--pc);transition:transform .12s,box-shadow .12s}
+.adv:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(36,38,43,.08)}
+.adv.unsw{--pc:var(--unsw)}.adv.mbs{--pc:var(--mbs)}
+.adv-h{display:flex;align-items:flex-start;gap:10px}
+.adv-h h3{font-size:17px}
+.adv-h .meta{font-size:12px;color:var(--muted)}
+.adv-h .score{margin-left:auto;text-align:right}
+.score b{display:block;font:600 24px/1 var(--mono)}
+.score span{font-size:11px;color:var(--muted)}
+.mini{display:grid;gap:5px}
+.mini-row{display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar{height:7px;border-radius:99px;background:var(--field);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--bc,var(--faint))}
+.r-dnm{--bc:var(--dnm);--pb:var(--dnm-bg);--pt:var(--dnm)}
+.r-meets{--bc:var(--meets);--pb:var(--meets-bg);--pt:var(--meets)}
+.r-exc{--bc:var(--exc);--pb:var(--exc-bg);--pt:var(--exc)}
+.r-none{--bc:var(--faint);--pb:var(--field);--pt:var(--muted)}
+.mono{font-family:var(--mono)}
+.adv-f{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--pb,var(--field));color:var(--pt,var(--muted));white-space:nowrap}
+.pill.pass{--pb:var(--exc-bg);--pt:var(--exc)}
+.pill.fail{--pb:var(--dnm-bg);--pt:var(--dnm)}
+.pill.st-prep{--pb:#eceef1;--pt:#5d636c}
+.pill.st-plan{--pb:var(--g-bg);--pt:var(--g)}
+.pill.st-goal{--pb:var(--o-bg);--pt:var(--o)}
+.pill.st-done{--pb:var(--w-bg);--pt:var(--w)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile span{font-size:12px;color:var(--muted)}
+.tile b{display:block;font:600 24px/1.2 var(--mono);margin-top:2px}
+.seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:7px;color:var(--muted);font-weight:500;font-size:13px}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.qrow{display:grid;grid-template-columns:34px minmax(0,1fr) 120px 44px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.qrow:last-child{border-bottom:0}
+.qrow .qk{font:600 12px var(--mono);color:var(--muted)}
+.qrow .focus{font-size:10.5px;font-weight:700;color:var(--dnm);text-transform:uppercase;letter-spacing:.04em;margin-left:6px}
+.secrow{display:grid;grid-template-columns:130px 1fr 54px 104px;gap:10px;align-items:center;padding:6px 0;font-size:13px}
+.calls{display:flex;flex-direction:column}
+.call{border-bottom:1px solid var(--line)}
+.call:last-child{border-bottom:0}
+.call-h{display:grid;grid-template-columns:auto 92px 74px 54px 84px minmax(0,1fr) 20px;gap:10px;align-items:center;padding:9px 4px;cursor:pointer;font-size:13px}
+.call-h:hover{background:var(--field)}
+.call-h .foc{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-h .car{color:var(--faint);transition:transform .15s}
+.call.open .car{transform:rotate(90deg)}
+.call-d{display:none;padding:4px 6px 16px}
+.call.open .call-d{display:block}
+.qd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.qd > div{background:var(--field);border-radius:9px;padding:10px 12px;font-size:13px}
+.qd .qh{display:flex;gap:8px;align-items:center;margin-bottom:4px;font-weight:600}
+.qd .opp{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);color:#5a4a00}
+.kv{font-size:13px;margin:8px 0}
+.kv b{display:block;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.fail-list{margin:6px 0 0;padding-left:18px;color:var(--dnm);font-size:13px}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.hist{display:grid;gap:10px}
+.hcard{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+.hcard:hover{background:var(--field)}
+.hcard .d{font:500 13px var(--mono);color:var(--muted)}
+.hcard .t{font-weight:600}
+.hcard .s{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.step{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;text-align:left;color:var(--muted)}
+.step i{font:600 13px var(--mono);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--field);font-style:normal;flex:none}
+.step b{display:block;color:var(--ink);font-size:14px}
+.step span{font-size:12px}
+.step.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.step.on i{background:var(--ink);color:#fff}
+.step.done i{background:var(--w);color:#fff}
+label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:12px 0 5px}
+label.f:first-child{margin-top:0}
+.in,textarea.in{width:100%;border:1px solid var(--line);background:var(--field);border-radius:9px;padding:9px 11px;outline:none;transition:border-color .12s,background .12s}
+.in:hover{background:var(--fieldhover)}
+.in:focus{border-color:var(--focus);background:#fff}
+textarea.in{resize:vertical;min-height:70px;line-height:1.5}
+.pick{display:grid;grid-template-columns:22px 86px 54px 72px minmax(0,1fr);gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.pick:hover{background:var(--field)}
+.pick input{margin:0;width:16px;height:16px;accent-color:var(--w)}
+.pick .foc{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-list{max-height:430px;overflow:auto;border-top:1px solid var(--line);margin-top:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stage{border-top:4px solid var(--sc);padding-top:14px}
+.stage.goal{--sc:var(--g);--sb:var(--g-bg)}.stage.reality{--sc:var(--r);--sb:var(--r-bg)}.stage.options{--sc:var(--o);--sb:var(--o-bg)}.stage.will{--sc:var(--w);--sb:var(--w-bg)}
+.stage-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.stage-h .L{width:32px;height:32px;border-radius:9px;background:var(--sb);color:var(--sc);display:grid;place-items:center;font:700 17px var(--display)}
+.stage-h h3{font-size:17px}
+.stage-h span{font-size:12px;color:var(--muted)}
+.ev{background:var(--sb);border-radius:9px;padding:9px 12px;font-size:13px;margin-top:8px}
+.ev q{font-style:italic}
+.ev small{display:block;color:var(--muted);margin-top:3px}
+.tip{font-size:12.5px;color:var(--muted);margin-top:8px}
+.tip b{color:var(--ink)}
+.notes-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px}
+.qlist{margin:6px 0 0;padding-left:20px;font-size:13.5px}
+.qlist li{margin-bottom:5px}
+.copyrow{display:flex;gap:8px;align-items:flex-start}
+.copyrow > :first-child{flex:1;min-width:0}
+.cbtn{flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.cbtn:hover{background:var(--field);color:var(--ink)}
+.kr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:start;margin-bottom:8px}
+.kr > b{font:600 13px var(--mono);color:var(--o);padding-top:10px;text-align:center}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.callout{background:#fff8e1;border:1px solid #f3e0a0;border-radius:10px;padding:10px 14px;font-size:13px;color:#5a4a00;margin-bottom:14px}
+.table{width:100%;border-collapse:collapse;font-size:13.5px}
+.table th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+.table td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.table tr.click{cursor:pointer}
+.table tr.click:hover td{background:var(--field)}
+.guide{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.busy{position:fixed;inset:0;background:rgba(243,242,238,.75);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:50}
+.busy.hidden{display:none}
+.busy-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 28px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(36,38,43,.12)}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--w);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:9px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .2s;z-index:60;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.bad{background:var(--dnm)}
+dialog{border:1px solid var(--line);border-radius:14px;padding:20px 22px;max-width:480px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(36,38,43,.35)}
+.save{font-size:12px;color:var(--muted)}
+@media (max-width:1100px){.split,.notes-stage{grid-template-columns:1fr}.qd{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{display:flex;gap:4px;padding:8px 12px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  .side a{margin:0;white-space:nowrap}
+  .side .hint{display:none}
+  main{padding:18px 16px 50px}
+  .top{padding:10px 16px}
+  .top .chip{display:none}
+  .tiles,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g2,.guide{grid-template-columns:1fr}
+  .call-h{grid-template-columns:auto 84px 54px 70px 20px}
+  .call-h .ty,.call-h .foc{display:none}
+  .pick{grid-template-columns:22px 80px 48px minmax(0,1fr)}
+  .pick .res{display:none}
+  .secrow{grid-template-columns:110px 1fr 44px}
+  .secrow .pill{display:none}
+  .qrow{grid-template-columns:30px minmax(0,1fr) 40px}
+  .qrow .bar{display:none}
 }
 </style>
 </head>
 <body>
-
-<!-- Sidebar -->
-<nav id="sidebar">
-  <div class="sidebar-header">
-    <div class="logo-row">
-      <div class="logo-squares">
-        <span></span><span></span><span></span><span style="opacity:0.4"></span>
-      </div>
-      <span class="logo-text">Keypath Education</span>
-    </div>
-    <div class="logo-sub">GROW Coaching Portal</div>
-  </div>
-
-  <div class="tl-selector">
-    <label>Team Leader</label>
-    <select id="tl-select" onchange="setTL(this.value)">
-      <option value="">Select your name...</option>
-      <option value="Greg Banks">Greg Banks</option>
-      <option value="Layna Armstrong">Layna Armstrong</option>
-      <option value="David Hagiel">David Hagiel</option>
-      <option value="Dilshan Fernando">Dilshan Fernando</option>
-      <option value="Brett Sanderson">Brett Sanderson</option>
-      <option value="Carmela Gomez">Carmela Gomez</option>
-      <option value="Spencer Pixton">Spencer Pixton</option>
-      <option value="Lareina Rajah">Lareina Rajah</option>
-    </select>
-  </div>
-
-  <nav class="sidebar-nav">
-    <div class="nav-section">Navigation</div>
-    <div class="nav-item active" onclick="showPage('dashboard')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </div>
-    <div class="nav-item" onclick="showPage('new-session')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      New Session
-    </div>
-    <div class="nav-section">Advisors</div>
-    <div id="advisor-nav"></div>
+<header class="top">
+  <a class="brand" href="#/advisers">
+    <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1f9461"/><path d="M32 50V30" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M32 34c0-9 6-15 16-15 0 10-6 15-16 15zM32 30c0-7-5-12-13-12 0 8 5 12 13 12z" fill="#fff"/></svg>
+    <div><b>Pod C GROW Coaching</b><span>QA coaching record keeper</span></div>
+  </a>
+  <div class="sp"></div>
+  <span class="save" id="saveState"></span>
+  <span class="chip load" id="qaChip"><i></i>Loading QA data</span>
+  <button class="ghost" data-act="key">AI settings</button>
+</header>
+<div class="shell">
+  <nav class="side" id="side">
+    <a href="#/advisers" data-nav="advisers" style="--nc:var(--w)"><i></i>Advisers</a>
+    <a href="#/sessions" data-nav="sessions" style="--nc:var(--g)"><i></i>Sessions<b id="openCount"></b></a>
+    <a href="#/guide" data-nav="guide" style="--nc:var(--o)"><i></i>GROW guide</a>
+    <div class="hint">QA findings come live from the BU2 QA dashboard. Sessions save automatically.</div>
   </nav>
-
-  <div class="sidebar-footer">FY27 SSA Call Quality Framework</div>
-</nav>
-
-<!-- Main -->
-<main id="main">
-  <div class="topbar">
-    <span class="topbar-title" id="page-title">Dashboard</span>
-    <div class="topbar-right">
-      <span id="tl-display" style="font-size:13px;color:#64748b"></span>
-    </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="page-dashboard" class="page active">
-    <div class="page-header">
-      <h1>Coaching Dashboard</h1>
-      <p>Track GROW sessions across your team</p>
-    </div>
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="label">Total Sessions</div>
-        <div class="value" id="stat-total">0</div>
-        <div class="sub">All time</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Completed</div>
-        <div class="value" id="stat-complete">0</div>
-        <div class="sub">This quarter</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">In Progress</div>
-        <div class="value" id="stat-progress">0</div>
-        <div class="sub">Awaiting session</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Advisors Coached</div>
-        <div class="value" id="stat-advisors">0</div>
-        <div class="sub">Unique advisors</div>
-      </div>
-    </div>
-    <!-- GROW Model Reference -->
-    <div style="margin-bottom:28px">
-      <div class="section-header" style="margin-bottom:14px">
-        <h2>GROW Model Reference</h2>
-        <span style="font-size:12px;color:#94a3b8">Use this as a guide during every coaching session</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-
-        <div style="background:#fff;border-radius:var(--radius);border:1px solid #e2e8f0;overflow:hidden">
-          <div style="background:#DBEAFE;padding:14px 16px;display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">G</div>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#1D4ED8">Goal</div>
-              <div style="font-size:11px;color:#3B82F6">Set the intention</div>
-            </div>
-          </div>
-          <div style="padding:14px 16px">
-            <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.5">Agree on what a good outcome looks like for both of you before looking at the call.</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:6px">
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #1D4ED8;line-height:1.4">What would you like to get out of today?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #1D4ED8;line-height:1.4">What does a great call look like to you?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #1D4ED8;line-height:1.4">By the end, what would make this feel worthwhile?</li>
-            </ul>
-          </div>
-        </div>
-
-        <div style="background:#fff;border-radius:var(--radius);border:1px solid #e2e8f0;overflow:hidden">
-          <div style="background:#FEE2E2;padding:14px 16px;display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:#B91C1C;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">R</div>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#B91C1C">Reality</div>
-              <div style="font-size:11px;color:#EF4444">Explore the situation</div>
-            </div>
-          </div>
-          <div style="padding:14px 16px">
-            <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.5">Listen to their perspective before sharing any evaluation data. Their view first.</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:6px">
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B91C1C;line-height:1.4">How do you feel the call went overall?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B91C1C;line-height:1.4">Was there a moment where things shifted?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B91C1C;line-height:1.4">If you could change one thing, what would it be?</li>
-            </ul>
-          </div>
-        </div>
-
-        <div style="background:#fff;border-radius:var(--radius);border:1px solid #e2e8f0;overflow:hidden">
-          <div style="background:#FEF3C7;padding:14px 16px;display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:#B45309;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">O</div>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#B45309">Options</div>
-              <div style="font-size:11px;color:#D97706">Generate ideas together</div>
-            </div>
-          </div>
-          <div style="padding:14px 16px">
-            <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.5">Let the advisor lead on solutions. Your role is to ask, not prescribe. One specific change beats a long list.</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:6px">
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B45309;line-height:1.4">What could you do differently to achieve that?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B45309;line-height:1.4">What has worked for you in a similar situation?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #B45309;line-height:1.4">On a scale of 1 to 10, how confident are you that would work?</li>
-            </ul>
-          </div>
-        </div>
-
-        <div style="background:#fff;border-radius:var(--radius);border:1px solid #e2e8f0;overflow:hidden">
-          <div style="background:#D1FAE5;padding:14px 16px;display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:#065F46;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">W</div>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#065F46">Way Forward</div>
-              <div style="font-size:11px;color:#059669">Lock in the commitment</div>
-            </div>
-          </div>
-          <div style="padding:14px 16px">
-            <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.5">One or two focused actions is better than a long list. The commitment must be audible in the next recording.</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:6px">
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #065F46;line-height:1.4">What is the one thing you will do differently?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #065F46;line-height:1.4">How will we know it has happened?</li>
-              <li style="font-size:11px;color:#64748b;padding:6px 8px;background:#F8FAFC;border-radius:5px;border-left:3px solid #065F46;line-height:1.4">When shall we check in on this?</li>
-            </ul>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="section-header">
-      <h2>Recent Sessions</h2>
-      <button class="btn btn-primary" onclick="showPage('new-session')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Session
-      </button>
-    </div>
-    <div id="session-list" class="session-list">
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        <p>No coaching sessions yet. Start by creating a new session.</p>
-        <button class="btn btn-primary" onclick="showPage('new-session')">Create First Session</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- New Session -->
-  <div id="page-new-session" class="page">
-    <div class="page-header">
-      <h1>New Coaching Session</h1>
-      <p>Enter your QA observations and the AI will build a tailored GROW coaching template</p>
-    </div>
-    <div class="two-col">
-      <div>
-        <!-- Session Details -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header"><h2>Session Details</h2></div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Advisor Name</label>
-                <select id="new-advisor">
-                  <option value="">Select advisor...</option>
-                  <option value="Aisha Bowie">Aisha Bowie</option>
-                  <option value="Amelia Mosley">Amelia Mosley</option>
-                  <option value="Andrew Wedderburn">Andrew Wedderburn</option>
-                  <option value="Ananya Rao">Ananya Rao</option>
-                  <option value="Annaliese Giegerl">Annaliese Giegerl</option>
-                  <option value="Aquila Bartuah">Aquila Bartuah</option>
-                  <option value="Ben Cameron">Ben Cameron</option>
-                  <option value="Bianca Ceinar">Bianca Ceinar</option>
-                  <option value="Bo Plicharoensuk">Bo Plicharoensuk</option>
-                  <option value="Bronwyn Testa">Bronwyn Testa</option>
-                  <option value="Daljeet Sahota">Daljeet Sahota</option>
-                  <option value="Danny Page">Danny Page</option>
-                  <option value="David Bell">David Bell</option>
-                  <option value="Emily Liao">Emily Liao</option>
-                  <option value="Emma Arjoon">Emma Arjoon</option>
-                  <option value="Erin Corfield">Erin Corfield</option>
-                  <option value="Geoffrey Tawil">Geoffrey Tawil</option>
-                  <option value="Gurman Kaur">Gurman Kaur</option>
-                  <option value="Inuri Nethisinghe">Inuri Nethisinghe</option>
-                  <option value="Jacinta Hughes">Jacinta Hughes</option>
-                  <option value="Jesse Smith">Jesse Smith</option>
-                  <option value="Jess Terlick">Jess Terlick</option>
-                  <option value="Josie Trifunovic">Josie Trifunovic</option>
-                  <option value="Karen Price">Karen Price</option>
-                  <option value="Kate Hillery">Kate Hillery</option>
-                  <option value="Katina Astles">Katina Astles</option>
-                  <option value="Kaushi Kalugalla">Kaushi Kalugalla</option>
-                  <option value="Khushboo Italiya">Khushboo Italiya</option>
-                  <option value="Kimberley Hornlimann">Kimberley Hornlimann</option>
-                  <option value="Lavanya Gupta">Lavanya Gupta</option>
-                  <option value="Lika Paulo">Lika Paulo</option>
-                  <option value="Lily Graciano">Lily Graciano</option>
-                  <option value="Lily Soriano">Lily Soriano</option>
-                  <option value="Mary Hammoud">Mary Hammoud</option>
-                  <option value="Matthew Reid">Matthew Reid</option>
-                  <option value="Megan OKeefe">Megan OKeefe</option>
-                  <option value="Melanie Richards">Melanie Richards</option>
-                  <option value="Mia Yourn">Mia Yourn</option>
-                  <option value="Mignionne Fernandes">Mignionne Fernandes</option>
-                  <option value="Nikita Cross">Nikita Cross</option>
-                  <option value="Nequila Vincent">Nequila Vincent</option>
-                  <option value="Nova Brownlie">Nova Brownlie</option>
-                  <option value="Priscilla Samuel">Priscilla Samuel</option>
-                  <option value="Rhea Kapoor">Rhea Kapoor</option>
-                  <option value="Richa Dogra">Richa Dogra</option>
-                  <option value="Saravanan Rajamani">Saravanan Rajamani</option>
-                  <option value="Sharon Pangalos">Sharon Pangalos</option>
-                  <option value="Sofie Katsipodas">Sofie Katsipodas</option>
-                  <option value="Tasneem Tarafdar">Tasneem Tarafdar</option>
-                  <option value="Tyler Bruns">Tyler Bruns</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Session Date</label>
-                <input type="date" id="new-call-date">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Calls Reviewed</label>
-                <input type="number" id="new-calls-reviewed" min="1" max="20" placeholder="e.g. 2">
-              </div>
-              <div class="form-group">
-                <label>Overall Score (%)</label>
-                <input type="number" id="new-overall-score" min="0" max="100" placeholder="e.g. 72">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Call Type</label>
-              <select id="new-call-type">
-                <option value="Proactive Check-in">Proactive Check-in</option>
-                <option value="At-Risk / Retention">At-Risk / Retention</option>
-                <option value="Registration Call">Registration Call</option>
-                <option value="CS Engagement">CS Engagement</option>
-                <option value="Inbound Query">Inbound Query</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Coaching Focus -->
-        <div class="card">
-          <div class="card-header"><h2>Coaching Focus</h2><p style="margin-top:3px">What do you want to focus on in this session?</p></div>
-          <div class="card-body">
-            <div class="form-group" style="margin-bottom:0">
-              <textarea id="new-overall-comments" rows="6" placeholder="e.g. The advisor is technically sound but struggles to slow down in the Explore phase. They move to advice too quickly without confirming understanding. Want to focus on questioning technique and building confidence to pause before responding."></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: AI output -->
-      <div>
-        <div class="card" style="position:sticky;top:76px">
-          <div class="card-header"><h2>GROW Template Preview</h2></div>
-          <div class="card-body">
-            <div id="analysis-placeholder" style="text-align:center;padding:40px 0;color:#94a3b8">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:0.4"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              <p style="font-size:13px">Fill in your observations and click<br><strong>Generate GROW Template</strong></p>
-            </div>
-            <div id="analysis-result" class="analysis-panel">
-              <div class="goal-box">
-                <div class="label">Recommended GROW Goal</div>
-                <div class="goal-text" id="res-goal"></div>
-              </div>
-              <div class="groups-row" id="res-groups"></div>
-              <div style="margin-bottom:16px">
-                <div class="notes-label" style="margin-bottom:8px">Strengths to acknowledge</div>
-                <ul class="strengths-list" id="res-strengths"></ul>
-              </div>
-              <div>
-                <div class="notes-label" style="margin-bottom:8px">Coaching focus areas</div>
-                <ul class="development-list" id="res-development"></ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="clearNewSession()">Clear</button>
-      <button class="btn btn-secondary" id="btn-analyse" onclick="analyseTranscript()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        Generate GROW Template
-      </button>
-      <button class="btn btn-primary" id="btn-start-session" onclick="startSession()" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Start GROW Session
-      </button>
-    </div>
-  </div>
-
-  <!-- GROW Session -->
-  <div id="page-session" class="page">
-    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
-      <div>
-        <h1 id="sess-title">GROW Session</h1>
-        <p id="sess-sub"></p>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="exportSessionNotes()">Export Notes</button>
-        <button class="btn btn-secondary" onclick="showEmailDraft()">Draft Email</button>
-        <button class="btn btn-success" onclick="completeSession()">Mark Complete</button>
-        <button class="btn btn-danger" onclick="deleteCurrentSession()">Delete</button>
-      </div>
-    </div>
-
-    <div style="margin-bottom:20px">
-      <div class="goal-box">
-        <div class="label">Session Goal</div>
-        <div class="goal-text" id="sess-goal"></div>
-      </div>
-    </div>
-
-    <div class="grow-stages" id="grow-stages"></div>
-
-    <!-- Transcript -->
-    <div class="card" style="margin-top:16px">
-      <div class="card-header" style="cursor:pointer" onclick="toggleTranscript()">
-        <h2>Call Transcript</h2>
-        <span id="transcript-toggle-label" style="font-size:12px;color:#94a3b8">Click to expand</span>
-      </div>
-      <div id="transcript-panel" style="display:none;padding:16px 20px">
-        <textarea id="sess-transcript" style="width:100%;min-height:260px;border:1px solid #e2e8f0;border-radius:7px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;resize:vertical" placeholder="Paste the call transcript here for reference during the session..."></textarea>
-      </div>
-    </div>
-
-    <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
-      <button class="btn btn-secondary" onclick="saveSessionNotes()">Save Notes</button>
-      <button class="btn btn-primary" onclick="showEmailDraft()">Generate Pre-Session Email</button>
-    </div>
-  </div>
-
-  <!-- Email Draft -->
-  <div id="page-email" class="page">
-    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
-      <div>
-        <h1>Pre-Session Email</h1>
-        <p>Review and copy to send to the advisor before the coaching session</p>
-      </div>
-      <button class="btn btn-secondary" onclick="showPage('session')">Back to Session</button>
-    </div>
-    <div class="card">
-      <div class="email-header">
-        <div><span>Subject: </span><strong id="email-subject"></strong></div>
-      </div>
-      <div class="email-box" id="email-body" contenteditable="true"></div>
-    </div>
-    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="copyEmail()">Copy to Clipboard</button>
-    </div>
-  </div>
-
-  <!-- Advisor History -->
-  <div id="page-advisor" class="page">
-    <div class="advisor-profile" id="adv-profile"></div>
-    <div class="section-header">
-      <h2>Coaching History</h2>
-      <button class="btn btn-primary" onclick="newSessionForAdvisor()">New Session</button>
-    </div>
-    <div id="adv-session-list" class="session-list"></div>
-  </div>
-</main>
-
-<!-- Loading -->
-<div class="loading-overlay" id="loading">
-  <div class="loading-card">
-    <div class="spinner"></div>
-    <strong>Analysing transcript...</strong>
-    <p>The AI is reviewing the call against<br>the FY27 QA framework</p>
-  </div>
+  <main id="main"></main>
 </div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
+<div class="busy hidden" id="busy"><div class="busy-card"><span class="spin"></span><b id="busyMsg">Working</b></div></div>
+<div id="toast"></div>
+<dialog id="keyDlg">
+  <h2 style="font-size:19px;margin-bottom:6px">AI settings</h2>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">The GROW plan, HiBob goal and email are written by Google Gemini. Your key is stored only in this browser and never published with the site.</p>
+  <label class="f" for="keyIn">Gemini API key</label>
+  <input class="in" id="keyIn" type="password" autocomplete="off" placeholder="Paste your key">
+  <p id="keySrc" style="font-size:12.5px;color:var(--muted);margin:8px 0 0"></p>
+  <div class="actions" style="justify-content:flex-end">
+    <button class="link danger" data-act="key-clear">Remove key</button>
+    <span style="flex:1"></span>
+    <button class="ghost" data-act="key-close">Cancel</button>
+    <button class="btn green" data-act="key-save">Save</button>
+  </div>
+</dialog>
 <script>
-// ── API Key ──────────────────────────────────────────────────────────────
-const GEMINI_KEY = 'GEMINI_KEY_PLACEHOLDER';
+const QA_BASE = 'https://keypath-au.github.io/BU2-Team-Dashboard/';
+const QA_URL = QA_BASE + 'qa-dashboard.html';
+const DB = 'https://unsw-team-calendar-default-rtdb.asia-southeast1.firebasedatabase.app/grow_coaching';
+const MODEL = 'gemini-3.6-flash';
+const ADVISERS = [
+  { name: 'Amelia Churchill', partner: 'UNSW' },
+  { name: 'Andrew Wedderburn', partner: 'UNSW' },
+  { name: 'Daljeet Sahota', partner: 'UNSW' },
+  { name: 'James Miller', partner: 'UNSW' },
+  { name: 'Kimberley Hornlimann', partner: 'UNSW' },
+  { name: 'Priscilla Samuel', partner: 'UNSW' },
+  { name: 'Stephanie Scriva', partner: 'UNSW' },
+  { name: 'Ananya Rao', partner: 'MBS' },
+  { name: 'Emma Arjoon', partner: 'MBS' },
+  { name: 'Inuri Nethisinghe', partner: 'MBS' }
+];
+const SECTIONS = [
+  { key: 'connect', label: 'Connect', qs: ['q1', 'q2'] },
+  { key: 'explore', label: 'Explore', qs: ['q3', 'q4'] },
+  { key: 'qualityOfAdvice', label: 'Quality of Advice', qs: ['q5', 'q6'] },
+  { key: 'resolve', label: 'Resolve', qs: ['q7', 'q8'] }
+];
+const QK = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'];
+const QTEXT_DEFAULT = {
+  q1: 'Opened call professionally and stated purpose clearly',
+  q2: 'Active listening and clear communication throughout call',
+  q3: "Explored student's situation with effective questioning",
+  q4: 'Summarised situation and confirmed understanding before responding',
+  q5: "Advice appropriate to student's situation",
+  q6: 'Options presented clearly to student',
+  q7: 'Call closed with clear conclusion and confirmed next steps',
+  q8: 'Student left call feeling supported and confident'
+};
+const STAGES = [
+  { key: 'goal', L: 'G', label: 'Goal', blurb: 'What the adviser wants from this session' },
+  { key: 'reality', L: 'R', label: 'Reality', blurb: 'What is happening now, using the QA evidence' },
+  { key: 'options', L: 'O', label: 'Options', blurb: 'What they could try' },
+  { key: 'will', L: 'W', label: 'Will', blurb: 'What they will do, and by when' }
+];
+const STEP_LIST = [
+  { key: 'prep', label: 'Prepare', sub: 'QA calls and your notes' },
+  { key: 'plan', label: 'GROW plan', sub: 'Questions for each stage' },
+  { key: 'notes', label: 'Session notes', sub: 'What was said and agreed' },
+  { key: 'outcome', label: 'Goal and email', sub: 'HiBob goal and recap' }
+];
 
-// ── State ────────────────────────────────────────────────────────────────
-let currentPage = 'dashboard';
-let currentSession = null;
-let currentAnalysis = null;
-let currentAdvisor = null;
-let currentTL = localStorage.getItem('grow-tl') || '';
+let QA = null, QAerr = '', QTEXT = Object.assign({}, QTEXT_DEFAULT);
+let SESS = {}, sessLoaded = false, sessErr = '';
+let winSel = '90', sessFilter = 'open';
+const openCalls = new Set();
 
-// ── Data ─────────────────────────────────────────────────────────────────
-function getSessions() {
-  return JSON.parse(localStorage.getItem('grow-sessions') || '[]');
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const isNum = v => typeof v === 'number' && !isNaN(v);
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+const today = () => iso(new Date());
+function addDays(s, n) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d); }
+function fmtDate(s, yr) { if (!s) return ''; const p = s.split('-'); if (p.length < 3) return s; return (+p[2]) + ' ' + MON[+p[1] - 1] + (yr === false ? '' : ' ' + p[0]); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const first = n => String(n || '').split(' ')[0];
+function toText(x) {
+  if (x == null) return '';
+  if (typeof x === 'string') return x;
+  if (Array.isArray(x)) return x.map(toText).filter(Boolean).join(' ');
+  if (typeof x === 'object') return Object.values(x).map(toText).filter(Boolean).join(' ');
+  return String(x);
 }
-function saveSessions(sessions) {
-  localStorage.setItem('grow-sessions', JSON.stringify(sessions));
+const clip = (s, n) => { s = toText(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+function rating5(v) {
+  if (!isNum(v)) return { label: 'No data', cls: 'r-none' };
+  const f = Math.floor(Math.round(v * 1000) / 1000);
+  if (f >= 4) return { label: 'Exceeds', cls: 'r-exc' };
+  if (f >= 3) return { label: 'Meets', cls: 'r-meets' };
+  return { label: 'Does not meet', cls: 'r-dnm' };
 }
-function getSession(id) {
-  return getSessions().find(s => s.id === id);
-}
-function saveSession(session) {
-  const sessions = getSessions();
-  const idx = sessions.findIndex(s => s.id === session.id);
-  if (idx >= 0) sessions[idx] = session;
-  else sessions.unshift(session);
-  saveSessions(sessions);
-}
-function uuid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-function initials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-function fmtDate(iso) {
-  if (!iso) return '';
-  return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-// ── TL ───────────────────────────────────────────────────────────────────
-function setTL(name) {
-  currentTL = name;
-  localStorage.setItem('grow-tl', name);
-  document.getElementById('tl-display').textContent = name ? 'Logged in as ' + name : '';
-}
-if (currentTL) {
-  document.getElementById('tl-select').value = currentTL;
-  document.getElementById('tl-display').textContent = 'Logged in as ' + currentTL;
-}
-
-// ── Navigation ───────────────────────────────────────────────────────────
-function showPage(page, data) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  currentPage = page;
-
-  const titles = {
-    'dashboard': 'Dashboard',
-    'new-session': 'New Coaching Session',
-    'session': 'GROW Session',
-    'email': 'Pre-Session Email',
-    'advisor': 'Advisor History'
-  };
-  document.getElementById('page-title').textContent = titles[page] || '';
-
-  if (page === 'dashboard') {
-    document.querySelectorAll('.nav-item')[0].classList.add('active');
-    renderDashboard();
-  } else if (page === 'new-session') {
-    document.querySelectorAll('.nav-item')[1].classList.add('active');
-    setDefaultDate();
-  } else if (page === 'advisor' && data) {
-    currentAdvisor = data;
-    renderAdvisorPage(data);
-  } else if (page === 'session' && data) {
-    currentSession = data;
-    renderSessionPage(data);
-  }
-
-  renderAdvisorNav();
-}
-
-function setDefaultDate() {
-  const d = document.getElementById('new-call-date');
-  if (!d.value) d.value = new Date().toISOString().split('T')[0];
-}
-
-// ── Dashboard ─────────────────────────────────────────────────────────────
-function renderDashboard() {
-  const sessions = getSessions().filter(s => !currentTL || s.tl === currentTL || !s.tl);
-  document.getElementById('stat-total').textContent = sessions.length;
-  document.getElementById('stat-complete').textContent = sessions.filter(s => s.status === 'complete').length;
-  document.getElementById('stat-progress').textContent = sessions.filter(s => s.status === 'in-progress').length;
-  document.getElementById('stat-advisors').textContent = [...new Set(sessions.map(s => s.advisorName))].length;
-
-  const list = document.getElementById('session-list');
-  if (sessions.length === 0) {
-    list.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-      <p>No coaching sessions yet.</p>
-      <button class="btn btn-primary" onclick="showPage('new-session')">Create First Session</button>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = sessions.slice(0, 20).map(s => {
-    const badgeClass = s.status === 'complete' ? 'badge-complete' : s.status === 'in-progress' ? 'badge-progress' : 'badge-draft';
-    const badgeText = s.status === 'complete' ? 'Complete' : s.status === 'in-progress' ? 'In Progress' : 'Draft';
-    const groups = (s.analysis?.groupsIdentified || []).map(g => `<span class="badge badge-group">${g.replace('Group ', '').split(':')[0]}</span>`).join('');
-    return `<div class="session-card" onclick="openSession('${s.id}')">
-      <div class="session-card-left">
-        <div class="advisor-avatar">${initials(s.advisorName)}</div>
-        <div class="session-info">
-          <h3>${s.advisorName}</h3>
-          <p>${fmtDate(s.callDate)} &bull; ${s.callType || 'Call'} &bull; ${s.tl || 'TL'}</p>
-        </div>
-      </div>
-      <div class="session-card-right">
-        ${groups}
-        <span class="badge ${badgeClass}">${badgeText}</span>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="deleteSession('${s.id}',event)">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
+const ratingPct = p => rating5(isNum(p) ? p / 20 : null);
+function ratingWord(r) {
+  const t = String(r || '').toLowerCase();
+  if (t.startsWith('exceed')) return 'r-exc';
+  if (t.startsWith('meet')) return 'r-meets';
+  if (t.startsWith('does')) return 'r-dnm';
+  return 'r-none';
 }
 
-function openSession(id) {
-  const session = getSession(id);
-  if (session) showPage('session', session);
+function toast(msg, bad) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', bad ? 4200 : 1800);
 }
+function busy(msg) { $('#busyMsg').textContent = msg || ''; $('#busy').classList.toggle('hidden', !msg); }
 
-// ── Advisor Nav ───────────────────────────────────────────────────────────
-function renderAdvisorNav() {
-  const sessions = getSessions().filter(s => !currentTL || s.tl === currentTL || !s.tl);
-  const advisors = [...new Set(sessions.map(s => s.advisorName))].sort();
-  const nav = document.getElementById('advisor-nav');
-  nav.innerHTML = advisors.map(name => `
-    <div class="nav-item ${currentAdvisor === name && currentPage === 'advisor' ? 'active' : ''}" onclick="showPage('advisor','${name}')">
-      <div style="width:22px;height:22px;border-radius:50%;background:rgba(42,172,226,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--kp-blue)">${initials(name)}</div>
-      ${name}
-    </div>
-  `).join('');
-
-  const suggestions = document.getElementById('advisor-suggestions');
-  if (suggestions) {
-    const teamAdvisors = ['Aisha Bowie','Amelia Mosley','Andrew Wedderburn','Ananya Rao','Annaliese Giegerl','Aquila Bartuah','Ben Cameron','Bianca Ceinar','Bo Plicharoensuk','Bronwyn Testa','Daljeet Sahota','Danny Page','David Bell','Emily Liao','Emma Arjoon','Erin Corfield','Geoffrey Tawil','Gurman Kaur','Inuri Nethisinghe','Jacinta Hughes','Jesse Smith','Jess Terlick','Josie Trifunovic','Kaushi Kalugalla','Karen Price','Kate Hillery','Katina Astles','Khushboo Italiya','Kimberley Hornlimann','Lavanya Gupta','Lika Paulo','Lily Graciano','Lily Soriano','Mary Hammoud','Matthew Reid','Megan OKeefe','Melanie Richards','Mia Yourn','Mignionne Fernandes','Nikita Cross','Nequila Vincent','Nova Brownlie','Priscilla Samuel','Rhea Kapoor','Richa Dogra','Saravanan Rajamani','Sharon Pangalos','Sofie Katsipodas','Tasneem Tarafdar','Tyler Bruns'];
-    const allAdvisors = [...new Set([...advisors, ...teamAdvisors])].sort();
-    suggestions.innerHTML = allAdvisors.map(a => `<option value="${a}">`).join('');
-  }
-}
-
-function buildAdvisorSuggestions() {
-  renderAdvisorNav();
-}
-
-// ── Advisor Page ──────────────────────────────────────────────────────────
-function renderAdvisorPage(name) {
-  const sessions = getSessions().filter(s => s.advisorName === name);
-  const profile = document.getElementById('adv-profile');
-  profile.innerHTML = `
-    <div class="advisor-avatar-lg">${initials(name)}</div>
-    <div class="advisor-info">
-      <h2>${name}</h2>
-      <p>${sessions.length} coaching session${sessions.length !== 1 ? 's' : ''} recorded</p>
-    </div>
-    <div class="advisor-stats">
-      <div class="adv-stat"><div class="v">${sessions.length}</div><div class="l">Sessions</div></div>
-      <div class="adv-stat"><div class="v">${sessions.filter(s => s.status === 'complete').length}</div><div class="l">Complete</div></div>
-      <div class="adv-stat"><div class="v">${sessions.filter(s => s.status === 'in-progress').length}</div><div class="l">In Progress</div></div>
-    </div>
-  `;
-  const list = document.getElementById('adv-session-list');
-  if (sessions.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>No sessions recorded for ${name} yet.</p></div>`;
-    return;
-  }
-  list.innerHTML = sessions.map(s => {
-    const badgeClass = s.status === 'complete' ? 'badge-complete' : s.status === 'in-progress' ? 'badge-progress' : 'badge-draft';
-    const badgeText = s.status === 'complete' ? 'Complete' : s.status === 'in-progress' ? 'In Progress' : 'Draft';
-    const groups = (s.analysis?.groupsIdentified || []).map(g => `<span class="badge badge-group">${g.replace('Group ', '').split(':')[0]}</span>`).join('');
-    return `<div class="session-card" onclick="openSession('${s.id}')">
-      <div class="session-card-left">
-        <div class="advisor-avatar">${initials(s.advisorName)}</div>
-        <div class="session-info">
-          <h3>${fmtDate(s.callDate)} &bull; ${s.callType || 'Call'}</h3>
-          <p>${s.analysis?.callSummary?.slice(0, 80) || 'Analysis pending'}...</p>
-        </div>
-      </div>
-      <div class="session-card-right">${groups}<span class="badge ${badgeClass}">${badgeText}</span></div>
-    </div>`;
-  }).join('');
-}
-
-function newSessionForAdvisor() {
-  showPage('new-session');
-  document.getElementById('new-advisor').value = currentAdvisor || '';
-}
-
-// ── Analyse / Generate GROW Template ─────────────────────────────────────
-async function analyseTranscript() {
-  const advisor = document.getElementById('new-advisor').value.trim();
-  if (!advisor) { showToast('Please select an advisor'); return; }
-
-  const callsReviewed   = document.getElementById('new-calls-reviewed').value || 'not specified';
-  const overallScore    = document.getElementById('new-overall-score').value;
-  const overallComments = document.getElementById('new-overall-comments').value.trim();
-
-  if (!overallComments) { showToast('Please add a coaching focus before generating'); return; }
-
-  let apiKey = GEMINI_KEY || localStorage.getItem('grow-gemini-key');
-  if (!apiKey || apiKey === 'GEMINI_KEY_PLACEHOLDER') {
-    apiKey = prompt('Enter your Gemini API key to enable AI analysis:');
-    if (!apiKey) return;
-    localStorage.setItem('grow-gemini-key', apiKey.trim());
-    apiKey = apiKey.trim();
-  }
-
-  document.getElementById('loading').classList.add('visible');
-  document.getElementById('loading').querySelector('strong').textContent = 'Building GROW template...';
-  document.getElementById('loading').querySelector('p').textContent = 'The AI is generating tailored coaching questions';
-
-  const obsText = [
-    `Calls reviewed: ${callsReviewed}`,
-    overallScore ? `Overall QA score: ${overallScore}%` : '',
-    `Coaching focus: ${overallComments}`,
-  ].filter(Boolean).join('\n');
-
-  const prompt = `You are a coaching assistant for Team Leaders at Keypath Education, Australia. A TL has reviewed ${callsReviewed} call(s) for advisor ${advisor} and wants to run a GROW coaching session. Build a tailored GROW coaching template based on the TL's coaching focus notes.
-
-TL NOTES:
-${obsText}
-
-Respond ONLY with valid JSON (no markdown, no explanation):
-{
-  "groupsIdentified": ["names of groups that need coaching - only include groups rated Developing or Needs work"],
-  "questionsLow": [],
-  "callSummary": "2-3 sentence summary of the advisor's overall performance pattern based on the TL observations",
-  "strengths": ["3-4 specific strengths based on what the TL rated as Strong or observed positively"],
-  "areasForDevelopment": ["2-3 specific development areas directly from the TL observations"],
-  "recommendedGoal": "One clear, specific GROW session goal in plain Australian English - based on the biggest development area",
-  "growQuestions": {
-    "goal": ["4 tailored Goal-stage questions for this specific coaching focus"],
-    "reality": ["4 tailored Reality-stage questions referencing the specific observations provided"],
-    "options": ["4 tailored Options-stage questions specific to the development area identified"],
-    "wayForward": ["4 tailored Way Forward questions with one specific observable commitment"]
-  },
-  "emailSubject": "QA Coaching Session - ${new Date().toLocaleString('en-AU', {month:'long',year:'numeric'})}",
-  "emailBody": "Full pre-session email body in plain text. Warm, professional Australian English. Reference the number of calls reviewed and overall score if available. Include call link placeholder [CALL LINK], session time placeholder [DATE/TIME], ask them to listen back before the session. Sign off from [TL NAME]. No em dashes."
-}`;
-
+async function loadQA() {
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 2000 } })
-    });
-    if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem('grow-gemini-key');
-      throw new Error('Invalid API key. Please try again.');
-    }
-    const data = await res.json();
-    let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    raw = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    currentAnalysis = JSON.parse(raw);
-    currentAnalysis._observations = obsText;
-    renderAnalysis(currentAnalysis);
-    document.getElementById('btn-start-session').disabled = false;
-    showToast('GROW template ready');
-  } catch (e) {
-    showToast('Error: ' + e.message);
-    console.error(e);
-  } finally {
-    document.getElementById('loading').classList.remove('visible');
+    const r = await fetch(QA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const txt = await r.text();
+    const tag = '<script type="application/json" id="qa-data">';
+    let i = txt.indexOf('\n' + tag);
+    if (i < 0) throw new Error('QA data block not found');
+    const a = i + 1 + tag.length;
+    const data = JSON.parse(txt.slice(a, txt.indexOf('</' + 'script>', a)));
+    QA = data;
+    if (data.questions) QK.forEach(k => { if (data.questions[k] && data.questions[k].text) QTEXT[k] = data.questions[k].text; });
+    QAerr = '';
+  } catch (e) { QAerr = e.message || String(e); }
+  const chip = $('#qaChip');
+  if (QA) {
+    const gen = QA.meta && QA.meta.generatedDate;
+    chip.className = 'chip ok';
+    chip.innerHTML = '<i></i>QA data: ' + QA.calls.length.toLocaleString() + ' calls' + (gen ? ', updated ' + esc(fmtDate(String(gen).slice(0, 10), false)) : '');
+  } else {
+    chip.className = 'chip err';
+    chip.innerHTML = '<i></i>QA data unavailable';
   }
+  render();
+}
+function callsFor(name) {
+  if (!QA) return [];
+  return QA.calls.filter(c => c.advisor === name).sort((a, b) => String(b.interactionDate).localeCompare(String(a.interactionDate)));
+}
+function callById(id) { return QA ? QA.calls.find(c => c.interactionId === id) : null; }
+function inWindow(calls, w) {
+  if (w === 'all') return calls;
+  const from = addDays(today(), -(+w));
+  return calls.filter(c => String(c.interactionDate) >= from);
+}
+function stats(calls) {
+  const r = { n: calls.length, overall: null, sec: {}, q: {}, fails: 0 };
+  r.overall = avg(calls.filter(c => isNum(c.overallScore) || c.result === 'Auto-Fail').map(c => c.result === 'Auto-Fail' ? 0 : c.overallScore));
+  r.raw = avg(calls.map(c => c.overallScore).filter(isNum));
+  calls.forEach(c => { const cr = c.compliance && c.compliance.result; if (cr === 'Fail' || cr === 'Auto-Fail' || c.result === 'Auto-Fail') r.fails++; });
+  SECTIONS.forEach(s => { r.sec[s.key] = avg(calls.map(c => c.sections && c.sections[s.key] && c.sections[s.key].pct).filter(isNum)); });
+  QK.forEach(k => { r.q[k] = avg(calls.map(c => c.questions && c.questions[k] && c.questions[k].score).filter(isNum)); });
+  return r;
+}
+function weakest(st, n) {
+  return QK.filter(k => isNum(st.q[k]) && st.q[k] < 4).sort((a, b) => st.q[a] - st.q[b]).slice(0, n);
 }
 
-function renderAnalysis(analysis) {
-  document.getElementById('analysis-placeholder').style.display = 'none';
-  document.getElementById('analysis-result').classList.add('visible');
-  document.getElementById('res-goal').textContent = analysis.recommendedGoal || '';
-
-  const allGroups = [
-    { key: 'Connect', label: 'Group A: Connect', weight: '10%' },
-    { key: 'Explore', label: 'Group B: Explore', weight: '40%' },
-    { key: 'Quality of Advice', label: 'Group C: Quality of Advice', weight: '30%' },
-    { key: 'Resolve', label: 'Group D: Resolve', weight: '20%' },
-  ];
-  const flagged = (analysis.groupsIdentified || []).map(g => g.toLowerCase());
-  document.getElementById('res-groups').innerHTML = allGroups.map(g => {
-    const isFlagged = flagged.some(f => f.includes(g.key.toLowerCase()));
-    return `<div class="group-chip ${isFlagged ? 'flagged' : 'ok'}">
-      <div class="g-name">${g.label}</div>
-      <div class="g-status">${isFlagged ? 'Coaching focus' : 'No issues identified'} &bull; ${g.weight}</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('res-strengths').innerHTML = (analysis.strengths || []).map(s => `<li>${s}</li>`).join('');
-  document.getElementById('res-development').innerHTML = (analysis.areasForDevelopment || []).map(d => `<li>${d}</li>`).join('');
+async function loadSessions() {
+  try {
+    const r = await fetch(DB + '.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    SESS = (await r.json()) || {};
+    sessErr = '';
+  } catch (e) { sessErr = e.message || String(e); }
+  sessLoaded = true;
+  render();
+}
+const saveTimers = {};
+function saveState(t) { $('#saveState').textContent = t; }
+function saveSoon(s) {
+  s.updatedAt = Date.now();
+  saveState('Saving…');
+  clearTimeout(saveTimers[s.id]);
+  saveTimers[s.id] = setTimeout(() => saveNow(s), 600);
+}
+async function saveNow(s) {
+  clearTimeout(saveTimers[s.id]);
+  try {
+    const r = await fetch(DB + '/' + s.id + '.json', { method: 'PUT', body: JSON.stringify(s) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    saveState('All changes saved');
+  } catch (e) { saveState('Not saved'); toast('Could not save: ' + (e.message || e), true); }
+}
+function sessionsFor(name) {
+  return Object.values(SESS).filter(s => s && s.adviser === name).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0));
+}
+function statusOf(s) {
+  if (s.complete) return { label: 'Complete', cls: 'st-done' };
+  if (s.outcome) return { label: 'Goal drafted', cls: 'st-goal' };
+  if (s.plan) return { label: 'Plan ready', cls: 'st-plan' };
+  return { label: 'Preparing', cls: 'st-prep' };
+}
+function getPath(o, p) { return p.split('.').reduce((x, k) => x == null ? undefined : x[k], o); }
+function setPath(o, p, v) {
+  const ks = p.split('.'); let x = o;
+  ks.slice(0, -1).forEach((k, i) => { if (x[k] == null || typeof x[k] !== 'object') x[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; x = x[k]; });
+  x[ks[ks.length - 1]] = v;
 }
 
-// ── Start Session ─────────────────────────────────────────────────────────
-function startSession() {
-  if (!currentAnalysis) return;
-  const advisor   = document.getElementById('new-advisor').value.trim();
-  const callDate  = document.getElementById('new-call-date').value;
-  const callType  = document.getElementById('new-call-type').value;
-  const callsReviewed  = document.getElementById('new-calls-reviewed').value;
-  const overallScore   = document.getElementById('new-overall-score').value;
-  const overallComments = document.getElementById('new-overall-comments').value.trim();
-
-  const session = {
-    id: uuid(),
-    tl: currentTL,
-    advisorName: advisor,
-    callDate,
-    callType,
-    callsReviewed,
-    overallScore,
-    overallComments,
-    observations: currentAnalysis._observations || '',
-    analysis: currentAnalysis,
-    grow: { goal: { notes: '', commitment: '' }, reality: { notes: '', commitment: '' }, options: { notes: '', commitment: '' }, wayForward: { notes: '', commitment: '' } },
-    status: 'in-progress',
-    createdAt: new Date().toISOString()
-  };
-  saveSession(session);
-  currentSession = session;
-  clearNewSession();
-  showPage('session', session);
-  renderAdvisorNav();
-  showToast('Session started');
+function getKey() {
+  try { return localStorage.getItem('grow-gemini-key') || localStorage.getItem('unsw-gemini-key') || ''; } catch (e) { return ''; }
 }
-
-function clearNewSession() {
-  document.getElementById('new-advisor').value = '';
-  document.getElementById('new-call-date').value = '';
-  document.getElementById('new-calls-reviewed').value = '';
-  document.getElementById('new-overall-score').value = '';
-  document.getElementById('new-overall-comments').value = '';
-  document.getElementById('analysis-placeholder').style.display = '';
-  document.getElementById('analysis-result').classList.remove('visible');
-  document.getElementById('btn-start-session').disabled = true;
-  currentAnalysis = null;
+function openKey() {
+  const own = (() => { try { return localStorage.getItem('grow-gemini-key'); } catch (e) { return null; } })();
+  const hub = (() => { try { return localStorage.getItem('unsw-gemini-key'); } catch (e) { return null; } })();
+  $('#keyIn').value = '';
+  $('#keySrc').textContent = own ? 'A key is saved for this tool.' : hub ? 'Using the key saved in this browser for the Advisor Hub. Paste a key to use a different one.' : 'No key saved yet.';
+  $('#keyDlg').showModal();
 }
-
-// ── Session Page ──────────────────────────────────────────────────────────
-function renderSessionPage(session) {
-  document.getElementById('sess-title').textContent = session.advisorName + ' — GROW Session';
-  const subParts = [fmtDate(session.callDate), session.callType || 'Call'];
-  if (session.callsReviewed) subParts.push(session.callsReviewed + ' call' + (session.callsReviewed == 1 ? '' : 's') + ' reviewed');
-  if (session.overallScore) subParts.push('Score: ' + session.overallScore + '%');
-  subParts.push('TL: ' + (session.tl || 'Unknown'));
-  document.getElementById('sess-sub').textContent = subParts.join(' • ');
-  document.getElementById('sess-goal').textContent = session.analysis?.recommendedGoal || '';
-
-  const stageConfig = [
-    { key: 'goal', letter: 'G', label: 'Goal', sub: 'Set the intention and agree on what a good outcome looks like', cls: 'stage-G' },
-    { key: 'reality', letter: 'R', label: 'Reality', sub: 'Explore the current situation — listen before sharing evaluation data', cls: 'stage-R' },
-    { key: 'options', letter: 'O', label: 'Options', sub: 'Generate ideas together — let the advisor lead on solutions', cls: 'stage-O' },
-    { key: 'wayForward', letter: 'W', label: 'Way Forward', sub: 'Convert the conversation into one specific and observable commitment', cls: 'stage-W' },
-  ];
-
-  const container = document.getElementById('grow-stages');
-  const transcriptEl = document.getElementById('sess-transcript');
-  if (transcriptEl) transcriptEl.value = session.transcript || '';
-
-  container.innerHTML = stageConfig.map((stage, i) => {
-    const questions = session.analysis?.growQuestions?.[stage.key] || [];
-    const notes = session.grow?.[stage.key]?.notes || '';
-    const commitment = session.grow?.[stage.key]?.commitment || '';
-    const isOpen = i === 0;
-    return `<div class="grow-stage">
-      <div class="stage-header ${stage.cls} ${isOpen ? 'open' : ''}" onclick="toggleStage(this)">
-        <div class="stage-letter">${stage.letter}</div>
-        <div>
-          <div class="stage-title">${stage.label}</div>
-          <div class="stage-sub">${stage.sub}</div>
-        </div>
-        <svg class="stage-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      <div class="stage-body ${isOpen ? 'open' : ''}" id="stage-body-${stage.key}">
-        <div>
-          <div class="notes-label">Guiding questions</div>
-          <ul class="q-list">${questions.map(q => `<li>${q}</li>`).join('')}</ul>
-        </div>
-        <div class="notes-area">
-          <div class="notes-label">TL notes</div>
-          <textarea id="notes-${stage.key}" placeholder="Record key points from the conversation...">${notes}</textarea>
-          <div class="commit-box" style="margin-top:10px">
-            <div class="notes-label" style="margin-bottom:6px">Commitment / Action</div>
-            <input type="text" id="commit-${stage.key}" placeholder="What did the advisor commit to?" value="${commitment}">
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+function deDash(x) {
+  if (typeof x === 'string') return x.replace(/\s*—\s*/g, ', ').replace(/\s+–\s+/g, ', ').replace(/–/g, '-');
+  if (Array.isArray(x)) return x.map(deDash);
+  if (x && typeof x === 'object') { const o = {}; for (const k in x) o[k] = deDash(x[k]); return o; }
+  return x;
 }
-
-function toggleTranscript() {
-  const panel = document.getElementById('transcript-panel');
-  const label = document.getElementById('transcript-toggle-label');
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : 'block';
-  label.textContent = isOpen ? 'Click to expand' : 'Click to collapse';
-}
-
-function toggleStage(header) {
-  const body = header.nextElementSibling;
-  const isOpen = header.classList.contains('open');
-  header.classList.toggle('open', !isOpen);
-  body.classList.toggle('open', !isOpen);
-}
-
-function saveSessionNotes() {
-  if (!currentSession) return;
-  ['goal', 'reality', 'options', 'wayForward'].forEach(key => {
-    if (!currentSession.grow[key]) currentSession.grow[key] = {};
-    const notesEl = document.getElementById('notes-' + key);
-    const commitEl = document.getElementById('commit-' + key);
-    if (notesEl) currentSession.grow[key].notes = notesEl.value;
-    if (commitEl) currentSession.grow[key].commitment = commitEl.value;
+async function ai(prompt) {
+  const key = getKey();
+  if (!key) { openKey(); throw new Error('Add your Gemini key in AI settings first.'); }
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + encodeURIComponent(key), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 16000, responseMimeType: 'application/json' } })
   });
-  const transcriptEl = document.getElementById('sess-transcript');
-  if (transcriptEl) currentSession.transcript = transcriptEl.value;
-  saveSession(currentSession);
-  showToast('Notes saved');
+  let data = null;
+  try { data = await res.json(); } catch (e) { }
+  if (!res.ok) {
+    const m = data && data.error && data.error.message;
+    if (res.status === 401 || res.status === 403 || /api key/i.test(m || '')) throw new Error('Gemini refused the key. Check it in AI settings. ' + (m || ''));
+    throw new Error('Gemini error ' + res.status + (m ? ': ' + m : ''));
+  }
+  const cand = data && data.candidates && data.candidates[0];
+  if (!cand) throw new Error('Gemini returned no answer. Try again.');
+  if (cand.finishReason === 'MAX_TOKENS') throw new Error('The answer was cut off before it finished. Try again with fewer calls ticked.');
+  let raw = ((cand.content && cand.content.parts) || []).filter(p => !p.thought).map(p => p.text || '').join('');
+  raw = raw.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+  const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+  if (s < 0 || e < 0) throw new Error('Gemini did not return the expected format. Try again.');
+  return deDash(JSON.parse(raw.slice(s, e + 1)));
 }
 
-function completeSession() {
-  if (!currentSession) return;
-  saveSessionNotes();
-  currentSession.status = 'complete';
-  currentSession.completedAt = new Date().toISOString();
-  saveSession(currentSession);
-  showToast('Session marked complete');
-  renderSessionPage(currentSession);
-}
-
-// ── Email ─────────────────────────────────────────────────────────────────
-function showEmailDraft() {
-  if (!currentSession?.analysis) return;
-  const subj = currentSession.analysis.emailSubject || 'QA Feedback';
-  let body = currentSession.analysis.emailBody || '';
-  body = body.replace('[TL NAME]', currentTL || 'Your TL');
-  body = body.replace('[CALL LINK]', '[Paste Genesys call link here]');
-  body = body.replace('[DATE/TIME]', '[Date and time]');
-  document.getElementById('email-subject').textContent = subj;
-  document.getElementById('email-body').textContent = body;
-  showPage('email');
-}
-
-function copyEmail() {
-  const subj = document.getElementById('email-subject').textContent;
-  const body = document.getElementById('email-body').textContent;
-  navigator.clipboard.writeText('Subject: ' + subj + '\n\n' + body).then(() => showToast('Copied to clipboard'));
-}
-
-// ── Toast ─────────────────────────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// ── Delete Session ────────────────────────────────────────────────────────
-function deleteCurrentSession() {
-  if (!currentSession) return;
-  if (!confirm('Delete this coaching session? This cannot be undone.')) return;
-  const sessions = getSessions().filter(s => s.id !== currentSession.id);
-  saveSessions(sessions);
-  currentSession = null;
-  renderAdvisorNav();
-  showPage('dashboard');
-  showToast('Session deleted');
-}
-
-function deleteSession(id, e) {
-  e.stopPropagation();
-  if (!confirm('Delete this session?')) return;
-  const sessions = getSessions().filter(s => s.id !== id);
-  saveSessions(sessions);
-  renderAdvisorNav();
-  renderDashboard();
-  showToast('Session deleted');
-}
-
-// ── Export Notes ──────────────────────────────────────────────────────────
-function exportSessionNotes() {
-  if (!currentSession) return;
-  const s = currentSession;
-  const stages = [
-    { key: 'goal', label: 'G - Goal' },
-    { key: 'reality', label: 'R - Reality' },
-    { key: 'options', label: 'O - Options' },
-    { key: 'wayForward', label: 'W - Way Forward' },
-  ];
-  saveSessionNotes();
-  let text = `GROW COACHING SESSION\n`;
-  text += `${'='.repeat(40)}\n`;
-  text += `Advisor: ${s.advisorName}\n`;
-  text += `Call Date: ${fmtDate(s.callDate)}\n`;
-  text += `Call Type: ${s.callType || 'Call'}\n`;
-  text += `Team Leader: ${s.tl || ''}\n`;
-  text += `Status: ${s.status}\n\n`;
-  text += `SESSION GOAL\n${'-'.repeat(30)}\n${s.analysis?.recommendedGoal || ''}\n\n`;
-  text += `COACHING FOCUS\n${'-'.repeat(30)}\n`;
-  (s.analysis?.groupsIdentified || []).forEach(g => { text += `- ${g}\n`; });
-  text += '\n';
-  stages.forEach(stage => {
-    const data = s.grow?.[stage.key] || {};
-    text += `${stage.label}\n${'-'.repeat(30)}\n`;
-    if (data.notes) text += `Notes:\n${data.notes}\n\n`;
-    if (data.commitment) text += `Commitment: ${data.commitment}\n`;
-    text += '\n';
+function brief(calls) {
+  if (!calls.length) return 'No QA evaluations were selected for this session.';
+  const st = stats(calls);
+  const dates = calls.map(c => c.interactionDate).sort();
+  const L = [];
+  L.push(calls.length + ' evaluated calls from ' + fmtDate(dates[0]) + ' to ' + fmtDate(dates[dates.length - 1]) + '. Average overall score ' + (isNum(st.overall) ? Math.round(st.overall) + '%' : 'n/a') + ' with auto-fails counted as 0, or ' + (isNum(st.raw) ? Math.round(st.raw) + '%' : 'n/a') + ' on call quality alone. Compliance fails: ' + st.fails + '.');
+  L.push('Section averages: ' + SECTIONS.map(s => s.label + ' ' + (isNum(st.sec[s.key]) ? (st.sec[s.key] / 20).toFixed(1) + '/5 (' + ratingPct(st.sec[s.key]).label + ')' : 'n/a')).join('; ') + '.');
+  L.push('Question averages: ' + QK.map(k => k.toUpperCase() + ' ' + (isNum(st.q[k]) ? st.q[k].toFixed(1) : 'n/a')).join(', ') + '.');
+  calls.slice().sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate))).forEach(c => {
+    L.push('');
+    L.push('CALL ' + fmtDate(c.interactionDate) + ' | ' + (c.callType || '') + ' | ' + (c.duration || '') + ' | overall ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'n/a') + ' | ' + (c.result || ''));
+    const comp = c.compliance || {};
+    const cf = (comp.checklist || []).filter(x => x.status && x.status !== 'Pass');
+    L.push('Compliance: ' + (comp.result || 'n/a') + (cf.length ? '. Failed: ' + cf.map(x => x.requirement + ' (' + clip(x.evidence, 220) + ')').join('; ') : ''));
+    if (c.questions) QK.forEach(k => {
+      const q = c.questions[k]; if (!q) return;
+      let line = k.toUpperCase() + ' ' + QTEXT[k] + ': ' + (q.rating || 'n/a') + (isNum(q.score) ? ' (' + q.score + '/5)' : '') + '. ' + clip(q.rationale, 380);
+      if (isNum(q.score) && q.score <= 3 && q.evidence && q.evidence.length) line += ' Evidence: ' + clip(q.evidence[0], 260);
+      if (q.coachingOpportunity) line += ' Coaching opportunity: ' + clip(q.coachingOpportunity, 300);
+      L.push(line);
+    });
+    if (c.primaryCoachingFocus) L.push('Primary coaching focus: ' + clip(c.primaryCoachingFocus, 200));
+    if (c.coachingRecommendation) L.push('Evaluator recommendation: ' + clip(c.coachingRecommendation, 600));
+    if (c.strengths && toText(c.strengths)) L.push('Strengths: ' + clip(c.strengths, 300));
   });
-
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `GROW-${s.advisorName.replace(' ','-')}-${s.callDate}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Notes exported');
+  return L.join('\n');
+}
+function prevSession(s) {
+  return sessionsFor(s.adviser).filter(x => x.id !== s.id && x.outcome && String(x.date) <= String(s.date)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+}
+function prevText(s) {
+  const p = prevSession(s);
+  if (!p) return 'No earlier coaching session recorded.';
+  const h = (p.outcome && p.outcome.hibob) || {};
+  return 'Previous session ' + fmtDate(p.date) + '. Goal: ' + (h.title || 'n/a') + '. Key results: ' + (h.keyResults || []).join(' | ') + '. Adviser commitments: ' + ((p.notes && p.notes.commitments) || 'n/a') + '.';
+}
+const RULES = [
+  'Write in Australian English (organise, behaviour, enrol, enrolment, program).',
+  'Never use em dashes or en dashes. Use commas, colons or full stops instead.',
+  'Plain text only inside the JSON strings. No markdown, no asterisks, no headings.',
+  'Only refer to call details and quotes that appear in the QA evidence. Never invent quotes, dates or scores.'
+];
+function growPrompt(s) {
+  const p = s.prep || {};
+  return [
+    'You are helping Greg Banks, Team Leader of Pod C, prepare a one-to-one GROW coaching session with Student Success Adviser ' + s.adviser + ' (' + (s.partner || '') + ' team, Keypath Education). Advisers support online postgraduate students by phone: enrolment, re-enrolment, study load, suspensions and withdrawals.',
+    '',
+    'QA framework FY27: Connect (Q1, Q2, 10%), Explore (Q3, Q4, 40%), Quality of Advice (Q5, Q6, 30%), Resolve (Q7, Q8, 20%). Each question is rated 1 to 5: Does Not Meet 1 to 2, Meets 3, Exceeds 4 to 5. Compliance (recording disclosure, then full name plus student ID or personal email verified before any account discussion) is pass or fail, and a fail is an auto-fail for the call.',
+    '',
+    'QA EVIDENCE',
+    s.qaBrief || 'None',
+    '',
+    'EARLIER COACHING',
+    prevText(s),
+    '',
+    "GREG'S PREPARATION NOTES",
+    'Observations: ' + (p.observations || 'none'),
+    'What Greg wants from this session: ' + (p.goal || 'not stated'),
+    'Questions Greg wants to explore: ' + (p.questions || 'none'),
+    '',
+    'TASK',
+    'Build a GROW coaching plan Greg can run in a 30 minute conversation. Choose ONE main coaching focus, weighing the QA evidence, the section weightings, any compliance fails (always the priority if present) and Greg\'s notes. If Greg\'s notes point at a focus, use it unless a compliance fail must come first, in which case make compliance the focus and mention Greg\'s topic in Options.',
+    'Coaching questions must be open, short and adviser-led. They draw the answer out of the adviser rather than tell them. Weave in Greg\'s own questions where they fit. For Reality, give 2 or 3 pieces of evidence from the calls with the call date and a short quote taken word for word from the evidence, plus what it shows. Recognise genuine strengths.',
+    'If there was an earlier session, include one Goal or Reality question that checks progress on it.',
+    '',
+    'RULES',
+    RULES.join('\n'),
+    '',
+    'Return JSON only, in exactly this shape:',
+    '{"focus":"one line naming the coaching focus","summary":"2 to 3 sentences on what the QA shows overall","strengths":["2 or 3 short strengths"],"stages":{"goal":{"purpose":"one sentence","questions":["4 questions"],"tip":"one practical tip for Greg"},"reality":{"purpose":"","questions":["4 questions"],"evidence":[{"date":"YYYY-MM-DD","quote":"","point":"what it shows"}],"tip":""},"options":{"purpose":"","questions":["4 questions"],"tip":""},"will":{"purpose":"","questions":["4 questions"],"tip":""}}}'
+  ].join('\n');
+}
+function outcomePrompt(s) {
+  const pl = s.plan || {}, n = s.notes || {};
+  const due = n.followUp || addDays(s.date || today(), 42);
+  return [
+    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a GROW coaching session with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
+    'Session date: ' + fmtDate(s.date) + '. Today: ' + fmtDate(today()) + '.',
+    '',
+    'QA framework FY27: Connect (Q1 opening, Q2 listening), Explore (Q3 questioning, Q4 summarise and confirm understanding), Quality of Advice (Q5 appropriate advice, Q6 options presented), Resolve (Q7 close and next steps, Q8 student supported). Rated 1 to 5: Does Not Meet 1 to 2, Meets 3, Exceeds 4 to 5. Compliance is pass or fail.',
+    '',
+    'QA PICTURE',
+    (s.qaBrief || 'None').split('\n').slice(0, 3).join('\n'),
+    '',
+    'COACHING FOCUS: ' + (pl.focus || 'not set'),
+    'PLAN SUMMARY: ' + (pl.summary || ''),
+    '',
+    'SESSION NOTES (what was actually said)',
+    'Goal: ' + (n.goal || 'none'),
+    'Reality: ' + (n.reality || 'none'),
+    'Options: ' + (n.options || 'none'),
+    'Will: ' + (n.will || 'none'),
+    'Adviser commitments: ' + (n.commitments || 'none'),
+    'Support Greg will provide: ' + (n.support || 'none'),
+    'Follow-up date: ' + fmtDate(due) + ' (' + due + ')',
+    '',
+    'EARLIER COACHING',
+    prevText(s),
+    '',
+    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. 2 or 3 key results that are measurable, ideally against QA results (for example: Meets or above on Q4 in at least 4 of the next 5 evaluated calls) or a clearly observable behaviour. Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Do not add commitments that were not discussed.',
+    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with 2 to 4 lines starting with "• ". Then the goal in one sentence. Then "What you\'ve committed to" with lines starting with "• ". Then what Greg will do to support. Then the check-in date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Do not mention scores unless they help.',
+    '',
+    'RULES',
+    RULES.join('\n'),
+    '',
+    'Return JSON only, in exactly this shape:',
+    '{"hibob":{"title":"","description":"","keyResults":["",""],"dueDate":"YYYY-MM-DD"},"email":{"subject":"","body":""}}'
+  ].join('\n');
+}
+function normPlan(r) {
+  const st = (r && r.stages) || {};
+  const o = { focus: toText(r && r.focus), summary: toText(r && r.summary), strengths: Array.isArray(r && r.strengths) ? r.strengths.map(toText) : [], stages: {} };
+  STAGES.forEach(g => {
+    const x = st[g.key] || {};
+    o.stages[g.key] = { purpose: toText(x.purpose), questions: Array.isArray(x.questions) ? x.questions.map(toText).filter(Boolean) : [], tip: toText(x.tip), evidence: Array.isArray(x.evidence) ? x.evidence.map(e => ({ date: toText(e.date), quote: toText(e.quote), point: toText(e.point) })) : [] };
+  });
+  return o;
+}
+async function buildPlan(s) {
+  const calls = (s.callIds || []).map(callById).filter(Boolean);
+  if (!calls.length && !((s.prep || {}).observations || (s.prep || {}).goal)) { toast('Tick some QA calls or add your observations first.', true); return; }
+  s.qaBrief = brief(calls);
+  busy('Building the GROW plan for ' + first(s.adviser) + '…');
+  try {
+    s.plan = normPlan(await ai(growPrompt(s)));
+    s.planAt = Date.now();
+    await saveNow(s);
+    location.hash = '#/session/' + s.id + '/plan';
+    toast('GROW plan ready');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
+}
+async function buildOutcome(s) {
+  const n = s.notes || {};
+  if (!['goal', 'reality', 'options', 'will', 'commitments'].some(k => (n[k] || '').trim())) { toast('Add some session notes first.', true); return; }
+  busy('Writing the HiBob goal and recap email…');
+  try {
+    const r = await ai(outcomePrompt(s));
+    const h = r.hibob || {}, em = r.email || {};
+    s.outcome = {
+      hibob: { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(toText).filter(Boolean), dueDate: toText(h.dueDate) || n.followUp || '' },
+      email: { subject: toText(em.subject), body: toText(em.body).replace(/\\n/g, '\n') }
+    };
+    s.outcomeAt = Date.now();
+    await saveNow(s);
+    location.hash = '#/session/' + s.id + '/outcome';
+    toast('Goal and email ready');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
-renderDashboard();
-renderAdvisorNav();
-setDefaultDate();
+function route() {
+  const h = decodeURIComponent(location.hash.replace(/^#\/?/, '')).split('/');
+  return { page: h[0] || 'advisers', a: h[1] || '', b: h[2] || '' };
+}
+function render() {
+  const r = route();
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === r.page || (r.page === 'adviser' && a.dataset.nav === 'advisers') || (r.page === 'session' && a.dataset.nav === 'sessions')));
+  const open = Object.values(SESS).filter(s => s && !s.complete).length;
+  $('#openCount').textContent = open ? open + ' open' : '';
+  const m = $('#main');
+  if (r.page === 'adviser') m.innerHTML = vAdviser(r.a);
+  else if (r.page === 'session') m.innerHTML = vSession(r.a, r.b);
+  else if (r.page === 'sessions') m.innerHTML = vSessions();
+  else if (r.page === 'guide') m.innerHTML = vGuide();
+  else m.innerHTML = vAdvisers();
+}
+function loadingNote() {
+  if (!QA && !QAerr) return '<div class="callout">Loading QA findings from the QA dashboard…</div>';
+  if (QAerr) return '<div class="callout">Could not load the QA dashboard (' + esc(QAerr) + '). You can still prepare sessions from your own notes. <button class="link" data-act="reload-qa">Try again</button></div>';
+  return '';
+}
+function secBars(st) {
+  return SECTIONS.map(s => {
+    const p = st.sec[s.key], r = ratingPct(p);
+    return '<div class="mini-row ' + r.cls + '"><span>' + s.label + '</span><div class="bar"><i style="width:' + (isNum(p) ? p : 0) + '%"></i></div><span class="mono">' + (isNum(p) ? (p / 20).toFixed(1) : '–') + '</span></div>';
+  }).join('');
+}
+function vAdvisers() {
+  let h = '<div class="ph"><div><h1>Advisers</h1><p>Pick an adviser to see their QA findings and coaching history, or start a session.</p></div></div>' + loadingNote();
+  ['UNSW', 'MBS'].forEach(pt => {
+    h += '<div class="section-t"><h2>' + pt + '</h2><span class="tag ' + pt.toLowerCase() + '">' + ADVISERS.filter(a => a.partner === pt).length + ' advisers</span></div><div class="adv-grid">';
+    ADVISERS.filter(a => a.partner === pt).forEach(a => {
+      const calls = callsFor(a.name), last5 = calls.slice(0, 5), st = stats(last5);
+      const ss = sessionsFor(a.name), last = ss[0];
+      const ov = st.overall, r = ratingPct(ov);
+      h += '<div class="card adv ' + pt.toLowerCase() + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
+      h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + fmtDate(calls[0].interactionDate, false) : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
+      h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>last ' + (last5.length || 5) + ' calls</span></div></div>';
+      if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
+      h += '<div class="adv-f">';
+      if (st.fails) h += '<span class="pill fail">' + st.fails + ' compliance fail' + (st.fails > 1 ? 's' : '') + '</span>';
+      if (last) { const so = statusOf(last); h += '<span class="pill ' + so.cls + '">' + so.label + '</span><span>' + (last.complete ? 'Coached ' : 'Session ') + fmtDate(last.date, false) + '</span>'; }
+      else h += '<span>Not coached here yet</span>';
+      h += '</div></div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
+function callRow(c) {
+  const open = openCalls.has(c.interactionId);
+  const res = c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">' + esc(c.result || 'Pass') + '</span>';
+  let h = '<div class="call' + (open ? ' open' : '') + '"><div class="call-h" data-act="toggle-call" data-cid="' + esc(c.interactionId) + '">';
+  h += '<span></span><span class="mono">' + fmtDate(c.interactionDate) + '</span><span class="ty">' + esc(c.callType || '') + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span>' + res + '<span class="foc">' + esc(clip(c.primaryCoachingFocus, 140)) + '</span><span class="car">›</span></div>';
+  if (open) h += '<div class="call-d">' + callDetail(c) + '</div>';
+  return h + '</div>';
+}
+function callDetail(c) {
+  let h = '';
+  const comp = c.compliance || {};
+  const cf = (comp.checklist || []).filter(x => x.status && x.status !== 'Pass');
+  if (cf.length) h += '<div class="kv"><b>Compliance</b><ul class="fail-list">' + cf.map(x => '<li><strong>' + esc(x.requirement) + '</strong></li>').join('') + '</ul></div>';
+  if (c.questions) {
+    h += '<div class="qd">' + QK.map(k => {
+      const q = c.questions[k]; if (!q) return '';
+      const cls = ratingWord(q.rating);
+      return '<div><div class="qh"><span class="mono" style="color:var(--muted)">' + k.toUpperCase() + '</span>' + esc(QTEXT[k]) + '</div><div class="row" style="margin-bottom:4px"><span class="pill ' + cls + '">' + esc(q.rating || 'n/a') + (isNum(q.score) ? ' ' + q.score + '/5' : '') + '</span></div>' + esc(clip(q.rationale, 600)) + (q.coachingOpportunity ? '<div class="opp">' + esc(clip(q.coachingOpportunity, 500)) + '</div>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  if (c.coachingRecommendation) h += '<div class="kv"><b>Evaluator recommendation</b>' + esc(clip(c.coachingRecommendation, 1200)) + '</div>';
+  if (c.coachingExample) h += '<div class="kv"><b>Example to try</b>' + esc(clip(c.coachingExample, 700)) + '</div>';
+  if (c.strengths && toText(c.strengths)) h += '<div class="kv"><b>Strengths</b>' + esc(clip(c.strengths, 500)) + '</div>';
+  const links = [];
+  if (c.transcriptUrl) links.push('<a href="' + esc(c.transcriptUrl) + '" target="_blank" rel="noopener">Open in Genesys</a>');
+  if (c.sourceDocUrl) links.push('<a href="' + esc(QA_BASE + c.sourceDocUrl) + '" target="_blank" rel="noopener">QA report PDF</a>');
+  if (links.length) h += '<div class="row" style="gap:16px;font-size:13px">' + links.join('') + '</div>';
+  return h;
+}
+function vAdviser(name) {
+  const a = ADVISERS.find(x => x.name === name);
+  if (!a) return '<div class="empty">Adviser not found. <a href="#/advisers">Back to advisers</a></div>';
+  const all = callsFor(name), calls = inWindow(all, winSel), st = stats(calls), weak = weakest(st, 2);
+  const ss = sessionsFor(name);
+  let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / ' + esc(a.partner) + '</div>';
+  h += '<div class="ph"><div><h1>' + esc(name) + '</h1><p>' + all.length + ' QA calls on the dashboard. ' + ss.length + ' coaching session' + (ss.length === 1 ? '' : 's') + ' recorded.</p></div><div class="sp"></div>';
+  h += '<div class="seg">' + [['30', '30 days'], ['90', '90 days'], ['all', 'All']].map(w => '<button data-act="win" data-win="' + w[0] + '" class="' + (winSel === w[0] ? 'on' : '') + '">' + w[1] + '</button>').join('') + '</div>';
+  h += '<button class="btn green" data-act="new-session" data-adviser="' + esc(name) + '">Start coaching session</button></div>';
+  h += loadingNote();
+  h += '<div class="tiles"><div class="tile"><span>Calls in view</span><b>' + calls.length + '</b></div><div class="tile ' + ratingPct(st.overall).cls + '" title="As on the QA dashboard, an auto-fail counts as 0%"><span>Average score' + (st.fails && isNum(st.raw) ? ' (' + Math.round(st.raw) + '% before auto-fails)' : '') + '</span><b style="color:var(--bc)">' + (isNum(st.overall) ? Math.round(st.overall) + '%' : '–') + '</b></div><div class="tile"><span>Compliance fails</span><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b></div><div class="tile"><span>Last coached</span><b style="font-size:18px">' + (ss.find(x => x.complete) ? fmtDate(ss.find(x => x.complete).date) : 'Not yet') + '</b></div></div>';
+  h += '<div class="split"><div class="card"><h2>Sections</h2><p class="sub">Average across the calls in view, on the 1 to 5 scale</p>';
+  h += SECTIONS.map(s => { const p = st.sec[s.key], r = ratingPct(p); return '<div class="secrow ' + r.cls + '"><b>' + s.label + '</b><div class="bar"><i style="width:' + (isNum(p) ? p : 0) + '%"></i></div><span class="mono">' + (isNum(p) ? (p / 20).toFixed(1) + '/5' : '–') + '</span><span class="pill">' + r.label + '</span></div>'; }).join('');
+  h += '</div><div class="card"><h2>Questions</h2><p class="sub">Lowest scoring questions are marked as a focus</p>';
+  h += QK.map(k => { const v = st.q[k], r = rating5(v); return '<div class="qrow ' + r.cls + '"><span class="qk">' + k.toUpperCase() + '</span><span>' + esc(QTEXT[k]) + (weak.includes(k) ? '<span class="focus">Focus</span>' : '') + '</span><div class="bar"><i style="width:' + (isNum(v) ? v * 20 : 0) + '%"></i></div><span class="mono" style="color:var(--bc);font-weight:600">' + (isNum(v) ? v.toFixed(1) : '–') + '</span></div>'; }).join('');
+  h += '</div></div>';
+  h += '<div class="section-t"><h2>Coaching sessions</h2></div>';
+  h += ss.length ? '<div class="hist">' + ss.map(histCard).join('') + '</div>' : '<div class="card empty">No sessions yet. Start one to build a GROW plan from these QA findings.</div>';
+  h += '<div class="section-t"><h2>QA calls</h2><span class="chip">' + calls.length + ' in view</span></div>';
+  h += '<div class="card">' + (calls.length ? '<div class="calls">' + calls.map(callRow).join('') + '</div>' : '<div class="empty">' + (QA ? 'No QA calls in this period.' : 'QA data not loaded.') + '</div>') + '</div>';
+  return h;
+}
+function histCard(s) {
+  const so = statusOf(s), t = (s.outcome && s.outcome.hibob && s.outcome.hibob.title) || (s.plan && s.plan.focus) || 'Session in preparation';
+  return '<div class="hcard" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><span class="d">' + fmtDate(s.date) + '</span><div style="min-width:0"><div class="t">' + esc(t) + '</div><div class="s">' + esc(s.adviser) + ((s.callIds || []).length ? ', ' + s.callIds.length + ' QA calls' : '') + '</div></div><span class="pill ' + so.cls + '">' + so.label + '</span></div>';
+}
+function vSessions() {
+  if (!sessLoaded) return '<div class="empty">Loading sessions…</div>';
+  let list = Object.values(SESS).filter(Boolean).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0));
+  const counts = { open: list.filter(s => !s.complete).length, done: list.filter(s => s.complete).length, all: list.length };
+  if (sessFilter === 'open') list = list.filter(s => !s.complete);
+  if (sessFilter === 'done') list = list.filter(s => s.complete);
+  let h = '<div class="ph"><div><h1>Sessions</h1><p>Every coaching session, newest first.</p></div><div class="sp"></div><div class="seg">' + [['open', 'Open'], ['done', 'Complete'], ['all', 'All']].map(f => '<button data-act="sfilter" data-f="' + f[0] + '" class="' + (sessFilter === f[0] ? 'on' : '') + '">' + f[1] + ' ' + counts[f[0]] + '</button>').join('') + '</div></div>';
+  if (sessErr) h += '<div class="callout">Could not load saved sessions (' + esc(sessErr) + ').</div>';
+  if (!list.length) return h + '<div class="card empty">No sessions here yet. Go to <a href="#/advisers">Advisers</a> to start one.</div>';
+  h += '<div class="card" style="padding:4px 8px;overflow-x:auto"><table class="table"><thead><tr><th>Date</th><th>Adviser</th><th>Focus or goal</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  list.forEach(s => {
+    const so = statusOf(s), hb = s.outcome && s.outcome.hibob;
+    h += '<tr class="click" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><td class="mono" style="white-space:nowrap">' + fmtDate(s.date) + '</td><td style="white-space:nowrap"><b>' + esc(s.adviser) + '</b></td><td>' + esc((hb && hb.title) || (s.plan && s.plan.focus) || '') + '</td><td class="mono" style="white-space:nowrap">' + (hb && hb.dueDate ? fmtDate(hb.dueDate) : '') + '</td><td><span class="pill ' + so.cls + '">' + so.label + '</span></td></tr>';
+  });
+  return h + '</tbody></table></div>';
+}
+function vGuide() {
+  const g = [
+    ['goal', 'G', 'Goal', 'Agree what the adviser wants to get out of the conversation and what good looks like on their calls.', ['What would make this conversation useful for you?', 'What would you like to be doing differently on your calls a month from now?']],
+    ['reality', 'R', 'Reality', 'Look at what is happening now. Use the QA evidence and let the adviser assess themselves before you share yours.', ['How do you think your recent calls went in this area?', 'What was happening for you in that moment on the call?']],
+    ['options', 'O', 'Options', 'Draw out several ways forward before settling on one. Offer your ideas last.', ['What could you try on your next few calls?', 'What has worked for you in similar situations?']],
+    ['will', 'W', 'Will', 'Commit to specific actions, a measure and a date. This becomes the HiBob goal.', ['What will you do, starting with your next call?', 'How will we both know it is working?']]
+  ];
+  let h = '<div class="ph"><div><h1>GROW guide</h1><p>How a session runs in this tool, and what each stage is for.</p></div></div>';
+  h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, tick the QA calls to cover and add your own observations and questions.</li><li><b>GROW plan.</b> The AI reads the QA findings with your notes and builds questions for each stage. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
+  h += '<div class="guide">' + g.map(x => '<div class="card stage ' + x[0] + '"><div class="stage-h"><span class="L">' + x[1] + '</span><h3>' + x[2] + '</h3></div><p style="margin:0 0 6px">' + x[3] + '</p><ul class="qlist">' + x[4].map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>').join('') + '</div>';
+  return h;
+}
+function stepDone(s, k) {
+  if (k === 'prep') return !!s.plan;
+  if (k === 'plan') return !!s.plan && !!Object.values(s.notes || {}).some(v => String(v || '').trim());
+  if (k === 'notes') return !!s.outcome;
+  return !!s.complete;
+}
+function vSession(id, step) {
+  const s = SESS[id];
+  if (!s) return sessLoaded ? '<div class="empty">Session not found. <a href="#/sessions">Back to sessions</a></div>' : '<div class="empty">Loading session…</div>';
+  step = STEP_LIST.some(x => x.key === step) ? step : 'prep';
+  const so = statusOf(s);
+  let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / <a href="#/adviser/' + encodeURIComponent(s.adviser) + '">' + esc(s.adviser) + '</a></div>';
+  h += '<div class="ph"><div><h1>Coaching session: ' + esc(first(s.adviser)) + '</h1><p class="row" style="gap:10px;margin-top:6px"><span class="pill ' + so.cls + '">' + so.label + '</span><label style="font-size:13px;color:var(--muted)">Session date <input class="in" type="date" data-bind="date" value="' + esc(s.date || '') + '" style="width:auto;padding:5px 8px;margin-left:4px"></label></p></div><div class="sp"></div><button class="link danger" data-act="del">Delete session</button></div>';
+  h += '<div class="steps">' + STEP_LIST.map((x, i) => '<button class="step' + (x.key === step ? ' on' : '') + (stepDone(s, x.key) ? ' done' : '') + '" data-act="go" data-href="#/session/' + s.id + '/' + x.key + '"><i>' + (stepDone(s, x.key) && x.key !== step ? '✓' : i + 1) + '</i><div><b>' + x.label + '</b><span>' + x.sub + '</span></div></button>').join('') + '</div>';
+  if (step === 'prep') h += vPrep(s);
+  else if (step === 'plan') h += vPlan(s);
+  else if (step === 'notes') h += vNotes(s);
+  else h += vOutcome(s);
+  return h;
+}
+function vPrep(s) {
+  const all = callsFor(s.adviser), sel = new Set(s.callIds || []);
+  const picked = all.filter(c => sel.has(c.interactionId)), st = stats(picked), weak = weakest(st, 3);
+  const p = s.prep || {};
+  let h = loadingNote() + '<div class="split"><div class="card"><h2>QA calls to cover</h2><p class="sub">Tick the evaluations this session should draw on</p>';
+  h += '<div class="row"><button class="ghost" data-act="preset" data-preset="30">Last 30 days</button><button class="ghost" data-act="preset" data-preset="5">Last 5</button><button class="ghost" data-act="preset" data-preset="fails">Compliance fails</button><button class="ghost" data-act="preset" data-preset="none">Clear</button><span style="margin-left:auto;font-size:13px;color:var(--muted)">' + sel.size + ' ticked</span></div>';
+  h += '<div class="pick-list">' + (all.length ? all.map(c => '<label class="pick"><input type="checkbox" data-call="' + esc(c.interactionId) + '"' + (sel.has(c.interactionId) ? ' checked' : '') + '><span class="mono">' + fmtDate(c.interactionDate) + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span><span class="res">' + (c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">Pass</span>') + '</span><span class="foc" title="' + esc(toText(c.primaryCoachingFocus)) + '">' + esc(clip(c.primaryCoachingFocus, 120)) + '</span></label>').join('') : '<div class="empty">' + (QA ? 'No QA calls for ' + esc(first(s.adviser)) + ' on the dashboard. Work from your notes.' : 'QA data not loaded.') + '</div>') + '</div></div>';
+  h += '<div class="grid"><div class="card"><h2>Snapshot of ticked calls</h2>';
+  if (picked.length) {
+    h += '<div class="row" style="gap:18px;margin-bottom:10px"><div class="score ' + ratingPct(st.overall).cls + '"><b style="color:var(--bc)">' + Math.round(st.overall || 0) + '%</b><span>average</span></div><div class="score"><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b><span>compliance fails</span></div></div><div class="mini">' + secBars(st) + '</div>';
+    if (weak.length) h += '<div class="kv" style="margin-top:12px"><b>Lowest questions</b>' + weak.map(k => esc(k.toUpperCase() + ' ' + QTEXT[k] + ' (' + st.q[k].toFixed(1) + ')')).join('<br>') + '</div>';
+  } else h += '<p style="color:var(--muted);margin:0">Tick calls on the left to see the picture.</p>';
+  h += '</div><div class="card"><h2>Your preparation</h2>';
+  h += '<label class="f">Your observations</label><textarea class="in" rows="4" data-bind="prep.observations" placeholder="What have you noticed in their calls, behaviour or results? Patterns, strengths, moments that stood out.">' + esc(p.observations || '') + '</textarea>';
+  h += '<label class="f">What you want from this session</label><textarea class="in" rows="2" data-bind="prep.goal" placeholder="For example: leave with one clear habit to confirm understanding before giving advice.">' + esc(p.goal || '') + '</textarea>';
+  h += '<label class="f">Questions you want to ask</label><textarea class="in" rows="3" data-bind="prep.questions" placeholder="Any questions you already have in mind, one per line.">' + esc(p.questions || '') + '</textarea>';
+  h += '<div class="actions"><button class="btn green" data-act="build">' + (s.plan ? 'Rebuild GROW plan' : 'Build GROW plan') + '</button>' + (s.plan ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/plan">View current plan</button>' : '') + '</div></div></div></div>';
+  return h;
+}
+function vPlan(s) {
+  const pl = s.plan;
+  if (!pl) return '<div class="card empty">No GROW plan yet.<div class="actions" style="justify-content:center"><button class="btn green" data-act="build">Build GROW plan</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Back to preparation</button></div></div>';
+  let h = '<div class="card" style="margin-bottom:14px"><label class="f">Coaching focus</label><input class="in" data-bind="plan.focus" value="' + esc(pl.focus) + '" style="font-weight:600;font-size:15px">';
+  h += '<div class="grid g2" style="margin-top:2px"><div><label class="f">What the QA shows</label><textarea class="in" rows="4" data-bind="plan.summary">' + esc(pl.summary) + '</textarea></div><div><label class="f">Strengths to recognise (one per line)</label><textarea class="in" rows="4" data-bind="plan.strengths" data-lines>' + esc((pl.strengths || []).join('\n')) + '</textarea></div></div></div>';
+  h += '<div class="grid g2">' + STAGES.map(g => {
+    const x = (pl.stages || {})[g.key] || {};
+    let c = '<div class="card stage ' + g.key + '"><div class="stage-h"><span class="L">' + g.L + '</span><div><h3>' + g.label + '</h3><span>' + g.blurb + '</span></div></div>';
+    c += '<label class="f">Purpose</label><textarea class="in" rows="2" data-bind="plan.stages.' + g.key + '.purpose">' + esc(x.purpose) + '</textarea>';
+    c += '<label class="f">Questions (one per line)</label><textarea class="in" rows="5" data-bind="plan.stages.' + g.key + '.questions" data-lines>' + esc((x.questions || []).join('\n')) + '</textarea>';
+    (x.evidence || []).forEach(e => { c += '<div class="ev"><q>' + esc(e.quote) + '</q><small>' + esc(fmtDate(e.date)) + (e.point ? ': ' + esc(e.point) : '') + '</small></div>'; });
+    if (x.tip) c += '<div class="tip"><b>Tip:</b> ' + esc(x.tip) + '</div>';
+    return c + '</div>';
+  }).join('') + '</div>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Start the session</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
+  return h;
+}
+function vNotes(s) {
+  const pl = s.plan || { stages: {} }, n = s.notes || {};
+  let h = '';
+  if (!s.plan) h += '<div class="callout">No GROW plan yet. You can still take notes, or <button class="link" data-act="build">build the plan first</button>.</div>';
+  else if (pl.focus) h += '<div class="callout"><b>Focus:</b> ' + esc(pl.focus) + '</div>';
+  h += '<div class="grid">' + STAGES.map(g => {
+    const x = (pl.stages || {})[g.key] || {};
+    return '<div class="card stage ' + g.key + '"><div class="notes-stage"><div><div class="stage-h"><span class="L">' + g.L + '</span><div><h3>' + g.label + '</h3><span>' + esc(x.purpose || g.blurb) + '</span></div></div>' + ((x.questions || []).length ? '<ol class="qlist">' + x.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ol>' : '') + '</div><div><label class="f">What ' + esc(first(s.adviser)) + ' said</label><textarea class="in" rows="6" data-bind="notes.' + g.key + '" placeholder="Notes for ' + g.label + '">' + esc(n[g.key] || '') + '</textarea></div></div></div>';
+  }).join('');
+  h += '<div class="card"><h2>What was agreed</h2><div class="grid g2"><div><label class="f">' + esc(first(s.adviser)) + '\'s commitments</label><textarea class="in" rows="4" data-bind="notes.commitments" placeholder="What they said they will do, in their words">' + esc(n.commitments || '') + '</textarea></div><div><label class="f">Support you will provide</label><textarea class="in" rows="4" data-bind="notes.support" placeholder="For example: listen to two calls together next week">' + esc(n.support || '') + '</textarea></div></div>';
+  h += '<label class="f">Follow-up date</label><input class="in" type="date" data-bind="notes.followUp" value="' + esc(n.followUp || '') + '" style="width:auto">';
+  h += '<div class="actions"><button class="btn green" data-act="outcome">' + (s.outcome ? 'Rewrite goal and email' : 'Create HiBob goal and email') + '</button>' + (s.outcome ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/outcome">View current goal and email</button>' : '') + '</div></div></div>';
+  return h;
+}
+function vOutcome(s) {
+  const o = s.outcome;
+  if (!o) return '<div class="card empty">No goal or email yet.<div class="actions" style="justify-content:center"><button class="btn green" data-act="outcome">Create HiBob goal and email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Back to session notes</button></div></div>';
+  const hb = o.hibob || {}, em = o.email || {};
+  const cp = p => '<button class="cbtn" data-act="copy" data-path="' + p + '">Copy</button>';
+  let h = '<div class="split"><div class="card stage options"><div class="stage-h"><span class="L">★</span><div><h3>HiBob goal</h3><span>Copy each field into the matching box in HiBob</span></div></div>';
+  h += '<label class="f">Goal title</label><div class="copyrow"><input class="in" data-bind="outcome.hibob.title" value="' + esc(hb.title) + '" style="font-weight:600">' + cp('outcome.hibob.title') + '</div>';
+  h += '<label class="f">Description</label><div class="copyrow"><textarea class="in" rows="5" data-bind="outcome.hibob.description">' + esc(hb.description) + '</textarea>' + cp('outcome.hibob.description') + '</div>';
+  h += '<label class="f">Key results</label>' + (hb.keyResults || []).map((k, i) => '<div class="kr"><b>' + (i + 1) + '</b><textarea class="in" rows="2" data-bind="outcome.hibob.keyResults.' + i + '">' + esc(k) + '</textarea>' + cp('outcome.hibob.keyResults.' + i) + '</div>').join('');
+  h += '<button class="link" data-act="add-kr" style="font-size:13px">+ Add key result</button>';
+  h += '<label class="f">Due date</label><div class="row"><input class="in" type="date" data-bind="outcome.hibob.dueDate" value="' + esc(hb.dueDate || '') + '" style="width:auto"><button class="cbtn" data-act="copy-due">Copy</button></div>';
+  h += '<div class="actions"><button class="btn blue sm" data-act="copy-goal">Copy whole goal</button></div></div>';
+  h += '<div class="card stage goal"><div class="stage-h"><span class="L">✉</span><div><h3>Recap email to ' + esc(first(s.adviser)) + '</h3><span>Edit, then copy into Outlook</span></div></div>';
+  h += '<label class="f">Subject</label><div class="copyrow"><input class="in" data-bind="outcome.email.subject" value="' + esc(em.subject) + '">' + cp('outcome.email.subject') + '</div>';
+  h += '<label class="f">Email</label><textarea class="in" rows="20" data-bind="outcome.email.body">' + esc(em.body) + '</textarea>';
+  h += '<div class="actions"><button class="btn blue sm" data-act="copy" data-path="outcome.email.body">Copy email</button><button class="ghost" data-act="mailto">Open in Outlook</button></div></div></div>';
+  h += '<div class="actions"><button class="btn ' + (s.complete ? '' : 'green') + '" data-act="complete">' + (s.complete ? 'Reopen session' : 'Mark session complete') + '</button><button class="ghost" data-act="outcome">Rewrite from notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Back to session notes</button></div>';
+  return h;
+}
+
+function curSession() { const r = route(); return r.page === 'session' ? SESS[r.a] : null; }
+function newSession(name) {
+  const a = ADVISERS.find(x => x.name === name) || { name, partner: '' };
+  const calls = callsFor(name);
+  let pick = inWindow(calls, '30');
+  if (!pick.length) pick = calls.slice(0, 5);
+  const s = { id: uid(), adviser: name, partner: a.partner, date: today(), callIds: pick.map(c => c.interactionId), prep: {}, notes: {}, createdAt: Date.now(), updatedAt: Date.now() };
+  SESS[s.id] = s;
+  saveNow(s);
+  location.hash = '#/session/' + s.id + '/prep';
+}
+function goalText(hb) {
+  return [hb.title || '', '', hb.description || '', '', 'Key results:', ...(hb.keyResults || []).map((k, i) => (i + 1) + '. ' + k), '', 'Due: ' + fmtDate(hb.dueDate)].join('\n');
+}
+async function copy(t) {
+  try { await navigator.clipboard.writeText(t); toast('Copied'); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied'); }
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act, s = curSession();
+  if (act === 'go') { location.hash = t.dataset.href; return; }
+  if (act === 'toggle-call') { const id = t.dataset.cid; openCalls.has(id) ? openCalls.delete(id) : openCalls.add(id); render(); return; }
+  if (act === 'win') { winSel = t.dataset.win; render(); return; }
+  if (act === 'sfilter') { sessFilter = t.dataset.f; render(); return; }
+  if (act === 'new-session') { newSession(t.dataset.adviser); return; }
+  if (act === 'reload-qa') { QAerr = ''; render(); loadQA(); return; }
+  if (act === 'key') { openKey(); return; }
+  if (act === 'key-close') { $('#keyDlg').close(); return; }
+  if (act === 'key-save') { const v = $('#keyIn').value.trim(); if (v) { try { localStorage.setItem('grow-gemini-key', v); } catch (x) { } toast('Key saved in this browser'); } $('#keyDlg').close(); return; }
+  if (act === 'key-clear') { try { localStorage.removeItem('grow-gemini-key'); } catch (x) { } toast('Key removed'); $('#keyDlg').close(); return; }
+  if (!s) return;
+  if (act === 'preset') {
+    const all = callsFor(s.adviser), p = t.dataset.preset;
+    const list = p === '30' ? inWindow(all, '30') : p === '5' ? all.slice(0, 5) : p === 'fails' ? all.filter(c => c.result === 'Auto-Fail' || (c.compliance && /fail/i.test(c.compliance.result || ''))) : [];
+    s.callIds = list.map(c => c.interactionId); saveSoon(s); render(); return;
+  }
+  if (act === 'build') { buildPlan(s); return; }
+  if (act === 'outcome') { buildOutcome(s); return; }
+  if (act === 'copy') { copy(String(getPath(s, t.dataset.path) || '')); return; }
+  if (act === 'copy-due') { copy(fmtDate(getPath(s, 'outcome.hibob.dueDate'))); return; }
+  if (act === 'copy-goal') { copy(goalText(s.outcome.hibob)); return; }
+  if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).concat(['']); saveSoon(s); render(); return; }
+  if (act === 'mailto') { const em = s.outcome.email; location.href = 'mailto:?subject=' + encodeURIComponent(em.subject || '') + '&body=' + encodeURIComponent(em.body || ''); return; }
+  if (act === 'complete') { s.complete = !s.complete; s.completedAt = s.complete ? Date.now() : null; saveNow(s); render(); toast(s.complete ? 'Session marked complete' : 'Session reopened'); return; }
+  if (act === 'del') {
+    if (!confirm('Delete this coaching session for ' + s.adviser + '? This cannot be undone.')) return;
+    fetch(DB + '/' + s.id + '.json', { method: 'DELETE' }).then(() => toast('Session deleted')).catch(() => toast('Could not delete', true));
+    delete SESS[s.id];
+    location.hash = '#/adviser/' + encodeURIComponent(s.adviser);
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target, p = el.dataset && el.dataset.bind;
+  if (!p) return;
+  const s = curSession(); if (!s) return;
+  let v = el.value;
+  if (el.hasAttribute('data-lines')) v = v.split('\n').map(x => x.trim()).filter(Boolean);
+  setPath(s, p, v);
+  saveSoon(s);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.call) {
+    const s = curSession(); if (!s) return;
+    const set = new Set(s.callIds || []);
+    el.checked ? set.add(el.dataset.call) : set.delete(el.dataset.call);
+    s.callIds = [...set];
+    saveSoon(s);
+    const y = window.scrollY, box = document.querySelector('.pick-list'), sy = box ? box.scrollTop : 0;
+    render();
+    window.scrollTo(0, y);
+    const nb = document.querySelector('.pick-list'); if (nb) nb.scrollTop = sy;
+  } else if (el.dataset && el.dataset.bind === 'date') render();
+});
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+window.addEventListener('beforeunload', e => { if ($('#saveState').textContent === 'Saving…') { e.preventDefault(); e.returnValue = ''; } });
+if (!location.hash) location.hash = '#/advisers';
+render();
+loadSessions();
+loadQA();
 </script>
 </body>
 </html>

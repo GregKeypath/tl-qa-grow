@@ -416,7 +416,7 @@ function cdl(c) {
   return fmtDate(c.interactionDate) + (c.manual && c.label ? ', ' + c.label : '');
 }
 function resultPill(c) {
-  if (c.manual && !c.scored) return '<span class="pill st-prep">To score</span>';
+  if (c.manual && !c.scored) return '<span class="pill st-prep">Not scored</span>';
   return c.result === 'Auto-Fail' ? '<span class="pill fail">Auto-fail</span>' : '<span class="pill pass">Pass</span>';
 }
 function inWindow(calls, w) {
@@ -516,8 +516,11 @@ async function ai(prompt) {
   return deDash(JSON.parse(raw.slice(s, e + 1)));
 }
 
-function brief(calls) {
-  if (!calls.length) return 'No QA evaluations were selected for this session.';
+function brief(all) {
+  if (!all.length) return 'No QA evaluations were selected for this session.';
+  const linkOnly = all.filter(c => c.manual && !c.scored), calls = all.filter(c => !(c.manual && !c.scored));
+  const note = linkOnly.length ? 'Greg listened to ' + linkOnly.length + ' call' + (linkOnly.length > 1 ? 's' : '') + ' himself (' + linkOnly.map(cdl).join('; ') + '). These have no scored evaluation: GREG\'S PREPARATION NOTES below are the QA findings for them and must be treated exactly like evaluator findings.' : '';
+  if (!calls.length) return note;
   const st = stats(calls);
   const dates = calls.map(c => c.interactionDate).sort();
   const L = [];
@@ -541,6 +544,7 @@ function brief(calls) {
     if (c.coachingRecommendation) L.push('Evaluator recommendation: ' + clip(c.coachingRecommendation, 600));
     if (c.strengths && toText(c.strengths)) L.push('Strengths: ' + clip(c.strengths, 300));
   });
+  if (note) L.push('', note);
   return L.join('\n');
 }
 function prevSession(s) {
@@ -571,6 +575,7 @@ function growPrompt(s) {
     'EARLIER COACHING',
     prevText(s),
     '',
+    /GREG'S PREPARATION NOTES below are the QA findings/.test(s.qaBrief || '') ? "When the QA evidence comes from Greg's notes: build the group insights, coaching focus and strengths from his notes as if they were evaluator findings. Put each point under the QA group it belongs to. Leave quote and date empty unless Greg's notes contain a quote. Set calls to the number of calls his notes say it came up in, otherwise null. Never invent scores." : '',
     "GREG'S PREPARATION NOTES",
     'Observations: ' + (p.observations || 'none'),
     'What Greg wants from this session: ' + (p.goal || 'not stated'),
@@ -641,8 +646,7 @@ function normPlan(r) {
 async function buildPlan(s) {
   const calls = (s.callIds || []).map(callById).filter(Boolean);
   if (!calls.length && !((s.prep || {}).observations || (s.prep || {}).goal)) { toast('Tick some QA calls or add your observations first.', true); return; }
-  const unscored = calls.filter(c => c.manual && !c.scored);
-  if (unscored.length) { toast('Score ' + unscored.map(cdl).join(' and ') + ' first, or untick ' + (unscored.length > 1 ? 'them' : 'it') + '.', true); return; }
+  if (calls.length && calls.every(c => c.manual && !c.scored) && !((s.prep || {}).observations || '').trim()) { toast('Add your QA findings under Your QA findings first.', true); return; }
   s.qaBrief = brief(calls);
   busy('Reading ' + calls.length + ' QA call' + (calls.length === 1 ? '' : 's') + ' for ' + first(s.adviser) + '…');
   try {
@@ -1104,7 +1108,9 @@ function vPrep(s) {
     if (weak.length) h += '<div class="kv" style="margin-top:12px"><b>Lowest questions</b>' + weak.map(k => esc(k.toUpperCase() + ' ' + QTEXT[k] + ' (' + st.q[k].toFixed(1) + ')')).join('<br>') + '</div>';
   } else h += '<p style="color:var(--muted);margin:0">Tick calls on the left to see the picture.</p>';
   h += '</div><div class="card"><h2>Your preparation</h2>';
-  h += '<label class="f">Your observations</label><textarea class="in" rows="4" data-bind="prep.observations" placeholder="What have you noticed in their calls, behaviour or results? Patterns, strengths, moments that stood out.">' + esc(p.observations || '') + '</textarea>';
+  const notesOnly = picked.length ? picked.every(c => c.manual && !c.scored) : s.partner === 'MBS';
+  if (notesOnly) h += '<div class="callout" style="margin:0 0 10px">These calls are not on the QA dashboard, so your findings below are used as the QA results.</div>';
+  h += '<label class="f">' + (notesOnly ? 'Your QA findings' : 'Your observations') + '</label><textarea class="in" rows="' + (notesOnly ? 7 : 4) + '" data-bind="prep.observations" placeholder="' + (notesOnly ? 'What you heard across the calls: what is working, what to develop, and which call it happened on. Quotes help if you have them.' : 'What have you noticed in their calls, behaviour or results? Patterns, strengths, moments that stood out.') + '">' + esc(p.observations || '') + '</textarea>';
   h += '<label class="f">What you want from this session</label><textarea class="in" rows="2" data-bind="prep.goal" placeholder="For example: leave with one clear habit to confirm understanding before giving advice.">' + esc(p.goal || '') + '</textarea>';
   h += '<label class="f">Questions or anything else to cover</label><textarea class="in" rows="3" data-bind="prep.questions" placeholder="Questions you want to ask, other topics, or wins to recognise.">' + esc(p.questions || '') + '</textarea>';
   h += '<div class="actions"><button class="btn green" data-act="build">' + (s.plan ? 'Rebuild QA insights' : 'Build QA insights') + '</button>' + (s.plan ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/plan">View current insights</button>' : '') + '</div></div></div></div>';

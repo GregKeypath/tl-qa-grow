@@ -132,7 +132,7 @@ main{padding:24px 28px 60px;min-width:0;max-width:1320px}
 .hcard .d{font:500 13px var(--mono);color:var(--muted)}
 .hcard .t{font-weight:600}
 .hcard .s{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:18px}
 .step{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;text-align:left;color:var(--muted)}
 .step i{font:600 13px var(--mono);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--field);font-style:normal;flex:none}
 .step b{display:block;color:var(--ink);font-size:14px}
@@ -169,6 +169,8 @@ textarea.in{resize:vertical;min-height:70px;line-height:1.5}
 .item-h .in{flex:1;min-width:0}
 .grp{border-top:4px solid var(--bc)}
 .grp .stage-h .pill{background:var(--pb);color:var(--pt)}
+.preview{border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#fff;font-size:14px}
+.preview p{margin:0 0 10px}.preview ul{margin:0 0 10px;padding-left:22px}
 .qform{margin-bottom:14px}
 .sp5{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .sp5 label,.pickopt{cursor:pointer}
@@ -309,6 +311,7 @@ const STAGES = [
 const STEP_LIST = [
   { key: 'prep', label: 'Prepare', sub: 'QA calls and your notes' },
   { key: 'plan', label: 'QA insights', sub: 'Groups and coaching items' },
+  { key: 'pre', label: 'Pre-session email', sub: 'Calls to listen to' },
   { key: 'notes', label: 'Session notes', sub: 'What was said and agreed' },
   { key: 'outcome', label: 'Goal and email', sub: 'HiBob goal and recap' }
 ];
@@ -669,6 +672,134 @@ async function buildPlan(s) {
   } catch (e) { toast(e.message || String(e), true); }
   finally { busy(''); render(); }
 }
+function questionsPrompt(s) {
+  const pl = s.plan || {}, p = s.prep || {};
+  return [
+    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, prepare a GROW coaching conversation with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
+    'QA framework FY27: Connect (Q1 opening, Q2 listening), Explore (Q3 questioning, Q4 summarise and confirm understanding), Quality of Advice (Q5 appropriate advice, Q6 options presented), Resolve (Q7 close and next steps, Q8 student supported). Compliance is pass or fail.',
+    '',
+    'QA EVIDENCE',
+    s.qaBrief || 'None',
+    '',
+    'MAIN COACHING FOCUS: ' + (pl.focus || 'not set'),
+    'QA GROUP FEEDBACK: ' + GROUPS.map(g => { const x = (pl.groups || {})[g.key] || {}; return x.develop ? g.label + ': ' + x.develop : ''; }).filter(Boolean).join(' | '),
+    "GREG'S NOTES: " + [p.observations, p.goal, p.questions].filter(Boolean).join(' | '),
+    '',
+    'COACHING ITEMS',
+    (pl.items || []).map((i, n) => (n + 1) + '. ' + i.title + ': ' + i.detail).join('\n'),
+    '',
+    'TASK',
+    'For EACH coaching item, in the same order, write 3 or 4 coaching questions Greg could ask ' + first(s.adviser) + ' about it, grounded in the QA feedback above.',
+    'Questions are open and adviser-led: they help the adviser notice and solve it themselves rather than telling them. Short and natural to say aloud. Where it helps, anchor a question to a specific call by its date and what happened (for example: On your 27 Oct call, when the student mentioned...). Cover the GROW stages across the set and start each question with its stage and a colon: "Goal: ", "Reality: ", "Options: " or "Will: ".',
+    '',
+    'RULES',
+    RULES.join('\n'),
+    '',
+    'Return JSON only: {"items":[["question","question","question"]]} with one array per coaching item, in order.'
+  ].join('\n');
+}
+async function buildQuestions(s) {
+  if (!s.plan || !(s.plan.items || []).length) { toast('Build the QA insights first.', true); return; }
+  if (!s.qaBrief) s.qaBrief = brief((s.callIds || []).map(callById).filter(Boolean));
+  busy('Writing coaching questions for ' + first(s.adviser) + '…');
+  try {
+    const r = await ai(questionsPrompt(s));
+    const arr = Array.isArray(r.items) ? r.items : [];
+    s.plan.items.forEach((it, i) => { const q = arr[i]; it.questions = (Array.isArray(q) ? q : q && q.questions ? q.questions : []).map(toText).filter(Boolean); });
+    await saveNow(s);
+    toast('Coaching questions ready');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
+}
+function sessionMonth(s) {
+  const calls = (s.callIds || []).map(callById).filter(Boolean);
+  const m = calls.map(c => c.qaMonth || String(c.interactionDate).slice(0, 7)).sort().pop();
+  return m ? MON_FULL[+m.slice(5, 7) - 1] : MON_FULL[new Date().getMonth()];
+}
+const MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function prePrompt(s, calls) {
+  const pl = s.plan || {};
+  return [
+    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, write a short email to Student Success Adviser ' + first(s.adviser) + ' before their monthly QA coaching session.',
+    '',
+    'MAIN COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not set'),
+    'COACHING ITEMS: ' + ((pl.items || []).map(i => i.title).join('; ') || 'none'),
+    'QA MONTH: ' + sessionMonth(s),
+    '',
+    'CALLS AVAILABLE (id | date | overall | result | coaching focus | weakest feedback)',
+    calls.map(c => {
+      const low = c.questions ? QK.filter(k => c.questions[k] && isNum(c.questions[k].score) && c.questions[k].score <= 3).map(k => k.toUpperCase() + ' ' + clip(c.questions[k].rationale, 160)).join(' / ') : '';
+      return c.interactionId + ' | ' + cdl(c) + ' | ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'not scored') + ' | ' + (c.result || '') + ' | ' + clip(c.primaryCoachingFocus || c.coachingRecommendation, 200) + ' | ' + (low || 'none');
+    }).join('\n'),
+    '',
+    'TASK 1: choose 2 or 3 calls (3 if at least 3 are available) that best show the main coaching focus, so listening back makes the focus obvious. Prefer clear examples. Give each a one-line reason for Greg (not for the adviser).',
+    'TASK 2: write the email in Greg\'s style, based on this example he sent before:',
+    '"Hi Emma,\\n\\nYour October QA session is coming up, in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month.\\n\\nBefore we catch up, please have a listen back to these calls:\\n\\n[CALL LINKS]\\n\\nIn the session we will use the GROW model to set a goal together for your calls. As you listen, have a think and come with a goal based on these calls.\\n\\nI know listening back can feel a bit awkward, but it really is one of the best ways to improve.\\n\\nGreg"',
+    'Keep the same warm, short, plain style and structure. Put the exact line [CALL LINKS] on its own where the links go. Add one or two sentences on what to listen for, pointing at the focus area in a supportive way without scores or the word fail. Make clear what is expected before the session (listen to the calls, note what they notice, come with a goal) and what will happen in it (talk through what they heard, use GROW to agree one goal and next steps). Sign off "Greg".',
+    '',
+    'RULES',
+    RULES.join('\n'),
+    '',
+    'Return JSON only: {"calls":[{"id":"exact id from the list","why":""}],"subject":"MBS QA Session, October style subject","body":""}'
+  ].join('\n');
+}
+async function buildPre(s) {
+  const calls = (s.callIds || []).map(callById).filter(c => c && c.transcriptUrl);
+  if (!calls.length) { toast('None of the ticked calls have a Genesys link.', true); return; }
+  busy('Choosing calls and writing the email…');
+  try {
+    const r = await ai(prePrompt(s, calls));
+    const ok = new Set(calls.map(c => c.interactionId));
+    let pick = (Array.isArray(r.calls) ? r.calls : []).filter(x => x && ok.has(x.id)).slice(0, 3).map(x => ({ id: x.id, why: toText(x.why) }));
+    if (!pick.length) pick = calls.slice(0, 3).map(c => ({ id: c.interactionId, why: '' }));
+    let body = toText(r.body).replace(/\\n/g, '\n');
+    if (!body.includes('[CALL LINKS]')) body = body.replace(/(listen back to these calls:?\s*\n)/i, '$1\n[CALL LINKS]\n');
+    if (!body.includes('[CALL LINKS]')) body += '\n\n[CALL LINKS]';
+    s.preEmail = { calls: pick, subject: toText(r.subject) || ((s.partner || 'QA') + ' QA Session, ' + sessionMonth(s)), body };
+    await saveNow(s);
+    location.hash = '#/session/' + s.id + '/pre';
+    toast('Pre-session email ready');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
+}
+function preCalls(s) {
+  const order = (s.callIds || []).map(callById).filter(Boolean).sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate)));
+  const chosen = new Set(((s.preEmail || {}).calls || []).map(x => x.id));
+  return order.filter(c => chosen.has(c.interactionId) && c.transcriptUrl);
+}
+function preParts(s) {
+  const pe = s.preEmail || {}, links = preCalls(s);
+  const plain = (pe.body || '').replace('[CALL LINKS]', links.map((c, i) => '• Call ' + (i + 1) + ': ' + c.transcriptUrl).join('\n'));
+  const html = (pe.body || '').split(/\n\s*\n/).map(par => {
+    if (par.trim() === '[CALL LINKS]') return '<ul>' + links.map((c, i) => '<li><a href="' + esc(c.transcriptUrl) + '">Call ' + (i + 1) + '</a></li>').join('') + '</ul>';
+    const lines = par.split('\n');
+    if (lines.every(l => /^\s*•/.test(l))) return '<ul>' + lines.map(l => '<li>' + esc(l.replace(/^\s*•\s*/, '')) + '</li>').join('') + '</ul>';
+    return '<p>' + lines.map(esc).join('<br>') + '</p>';
+  }).join('');
+  return { plain, html: '<div style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt">' + html + '</div>' };
+}
+async function copyRich(html, plain) {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([plain], { type: 'text/plain' }) })]);
+    toast('Copied with links. Paste into Outlook.');
+  } catch (e) { copy(plain); }
+}
+function vPre(s) {
+  const pe = s.preEmail;
+  const avail = (s.callIds || []).map(callById).filter(c => c && c.transcriptUrl).sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate)));
+  if (!pe) return '<div class="card empty">Write the email that goes to ' + esc(first(s.adviser)) + ' before the session, with links to the 2 or 3 calls that best show the coaching focus.' + (s.plan ? '' : '<br>Building the QA insights first gives a better choice of calls.') + '<div class="actions" style="justify-content:center"><button class="btn green" data-act="pre"' + (avail.length ? '' : ' disabled') + '>Write pre-session email</button></div>' + (avail.length ? '' : '<p style="font-size:13px">None of the ticked calls have a Genesys link.</p>') + '</div>';
+  const chosen = new Map((pe.calls || []).map(x => [x.id, x.why]));
+  const parts = preParts(s);
+  let h = '<div class="split"><div class="card"><h2>Calls to listen to</h2><p class="sub">Tick 2 or 3. They appear in the email as Call 1, Call 2 and so on, in date order.</p>';
+  h += avail.map(c => '<label class="pick" style="grid-template-columns:22px 110px 54px minmax(0,1fr)"><input type="checkbox" data-precall="' + esc(c.interactionId) + '"' + (chosen.has(c.interactionId) ? ' checked' : '') + '><span class="mono">' + esc(cdl(c)) + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span><span style="font-size:12.5px;color:var(--muted);white-space:normal">' + esc(chosen.get(c.interactionId) || clip(c.primaryCoachingFocus, 110)) + ' <a href="' + esc(c.transcriptUrl) + '" target="_blank" rel="noopener">Open</a></span></label>').join('');
+  h += '</div><div class="card stage goal"><div class="stage-h"><span class="L">✉</span><div><h3>Email to ' + esc(first(s.adviser)) + '</h3><span>[CALL LINKS] is replaced by the ticked calls</span></div></div>';
+  h += '<label class="f">Subject</label><div class="copyrow"><input class="in" data-bind="preEmail.subject" value="' + esc(pe.subject) + '"><button class="cbtn" data-act="copy" data-path="preEmail.subject">Copy</button></div>';
+  h += '<label class="f">Email</label><textarea class="in" rows="16" data-bind="preEmail.body" data-rerender>' + esc(pe.body) + '</textarea>';
+  h += '<label class="f">How it will look</label><div class="preview" id="prePreview">' + parts.html + '</div>';
+  h += '<div class="actions"><button class="btn blue sm" data-act="copy-pre">Copy email with links</button><button class="ghost" data-act="mailto-pre">Open in Outlook</button><button class="ghost" data-act="pre">Rewrite</button></div></div></div>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Next: session notes</button></div>';
+  return h;
+}
 async function buildOutcome(s) {
   const n = s.notes || {};
   if (!['goal', 'reality', 'options', 'will', 'commitments'].some(k => (n[k] || '').trim())) { toast('Add some session notes first.', true); return; }
@@ -875,6 +1006,7 @@ function vGuide() {
 function stepDone(s, k) {
   if (k === 'prep') return !!s.plan;
   if (k === 'plan') return !!s.plan && !!Object.values(s.notes || {}).some(v => String(v || '').trim());
+  if (k === 'pre') return !!s.preEmail;
   if (k === 'notes') return !!s.outcome;
   return !!s.complete;
 }
@@ -888,6 +1020,7 @@ function vSession(id, step) {
   h += '<div class="steps">' + STEP_LIST.map((x, i) => '<button class="step' + (x.key === step ? ' on' : '') + (stepDone(s, x.key) ? ' done' : '') + '" data-act="go" data-href="#/session/' + s.id + '/' + x.key + '"><i>' + (stepDone(s, x.key) && x.key !== step ? '✓' : i + 1) + '</i><div><b>' + x.label + '</b><span>' + x.sub + '</span></div></button>').join('') + '</div>';
   if (step === 'prep') h += vPrep(s);
   else if (step === 'plan') h += vPlan(s);
+  else if (step === 'pre') h += vPre(s);
   else if (step === 'notes') h += vNotes(s);
   else h += vOutcome(s);
   return h;
@@ -920,8 +1053,8 @@ function vPlan(s) {
   const calls = (s.callIds || []).map(callById).filter(Boolean), st = stats(calls);
   let h = '<div class="card" style="margin-bottom:14px"><label class="f">Main coaching focus</label><input class="in" data-bind="plan.focus" value="' + esc(pl.focus) + '" style="font-weight:600;font-size:15px">';
   h += '<div class="grid g2" style="margin-top:2px"><div><label class="f">Overall picture across ' + calls.length + ' call' + (calls.length === 1 ? '' : 's') + '</label><textarea class="in" rows="4" data-bind="plan.summary">' + esc(pl.summary) + '</textarea></div><div><label class="f">Strengths to recognise (one per line)</label><textarea class="in" rows="4" data-bind="plan.strengths" data-lines>' + esc((pl.strengths || []).join('\n')) + '</textarea></div></div></div>';
-  h += '<div class="section-t"><h2>Coaching items from the calls</h2><span class="chip">' + (pl.items || []).length + ' items</span></div><div class="grid" style="margin-bottom:8px">';
-  h += (pl.items || []).map((it, i) => '<div class="card item"><div class="item-h"><span class="num">' + (i + 1) + '</span><input class="in" data-bind="plan.items.' + i + '.title" value="' + esc(it.title) + '" style="font-weight:600">' + (it.calls ? '<span class="pill st-plan">' + it.calls + ' of ' + calls.length + ' calls</span>' : '') + '<button class="link danger" data-act="del-item" data-i="' + i + '" title="Remove item">Remove</button></div><textarea class="in" rows="3" data-bind="plan.items.' + i + '.detail">' + esc(it.detail) + '</textarea>' + (it.quote ? '<div class="ev"><q>' + esc(it.quote) + '</q><small>' + esc(fmtDate(it.date)) + '</small></div>' : '') + '</div>').join('');
+  h += '<div class="section-t"><h2>Coaching items from the calls</h2><span class="chip">' + (pl.items || []).length + ' items</span><span style="flex:1"></span><button class="btn blue sm" data-act="questions">' + ((pl.items || []).some(i => (i.questions || []).length) ? 'Rewrite coaching questions' : 'Suggest coaching questions') + '</button></div><div class="grid" style="margin-bottom:8px">';
+  h += (pl.items || []).map((it, i) => '<div class="card item"><div class="item-h"><span class="num">' + (i + 1) + '</span><input class="in" data-bind="plan.items.' + i + '.title" value="' + esc(it.title) + '" style="font-weight:600">' + (it.calls ? '<span class="pill st-plan">' + it.calls + ' of ' + calls.length + ' calls</span>' : '') + '<button class="link danger" data-act="del-item" data-i="' + i + '" title="Remove item">Remove</button></div><textarea class="in" rows="3" data-bind="plan.items.' + i + '.detail">' + esc(it.detail) + '</textarea>' + (it.quote ? '<div class="ev"><q>' + esc(it.quote) + '</q><small>' + esc(fmtDate(it.date)) + '</small></div>' : '') + ((it.questions || []).length ? '<label class="f">Coaching questions you could ask (one per line)</label><textarea class="in" rows="' + Math.max(3, it.questions.length + 1) + '" data-bind="plan.items.' + i + '.questions" data-lines>' + esc(it.questions.join(String.fromCharCode(10))) + '</textarea>' : '') + '</div>').join('');
   h += '<button class="link" data-act="add-item" style="justify-self:start;font-size:13px">+ Add coaching item</button></div>';
   h += '<div class="section-t"><h2>Insights by QA group</h2></div><div class="grid g2">' + GROUPS.map(g => {
     const x = (pl.groups || {})[g.key] || {};
@@ -929,7 +1062,7 @@ function vPlan(s) {
     const p = st.sec[g.key], r = g.key === 'compliance' ? (st.fails ? { label: st.fails + ' fail' + (st.fails > 1 ? 's' : ''), cls: 'r-dnm' } : { label: 'No fails', cls: 'r-exc' }) : ratingPct(p);
     return '<div class="card grp ' + r.cls + '"><div class="stage-h"><h3>' + g.label + '</h3><span class="pill" style="margin-left:auto">' + (isNum(p) && g.key !== 'compliance' ? (p / 20).toFixed(1) + '/5 ' : '') + r.label + '</span></div><label class="f">What is working</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.working">' + esc(x.working) + '</textarea><label class="f">To develop</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.develop">' + esc(x.develop) + '</textarea>' + (x.quote ? '<div class="ev"><q>' + esc(x.quote) + '</q><small>' + esc(fmtDate(x.date)) + '</small></div>' : '') + '</div>';
   }).join('') + '</div>';
-  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Start the session</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/pre">Next: pre-session email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Go to session notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
   return h;
 }
 function vNotes(s) {
@@ -938,7 +1071,7 @@ function vNotes(s) {
   if (!s.plan) h += '<div class="callout">No QA insights yet. You can still take notes, or <button class="link" data-act="build">build the insights first</button>.</div>';
   else {
     h += '<div class="card" style="margin-bottom:14px;border-left:4px solid var(--g)"><h2>To build into this session</h2>' + (pl.focus ? '<p style="margin:-4px 0 10px"><b>Main focus:</b> ' + esc(pl.focus) + '</p>' : '');
-    if ((pl.items || []).length) h += '<ol class="qlist">' + pl.items.map(i => '<li><b>' + esc(i.title) + '</b>' + (i.calls ? ' <span style="color:var(--muted)">(' + i.calls + ' calls)</span>' : '') + (i.detail ? '<br><span style="color:var(--muted)">' + esc(i.detail) + '</span>' : '') + '</li>').join('') + '</ol>';
+    if ((pl.items || []).length) h += '<ol class="qlist">' + pl.items.map(i => '<li><b>' + esc(i.title) + '</b>' + (i.calls ? ' <span style="color:var(--muted)">(' + i.calls + ' calls)</span>' : '') + (i.detail ? '<br><span style="color:var(--muted)">' + esc(i.detail) + '</span>' : '') + ((i.questions || []).length ? '<ul class="qlist" style="margin-top:4px">' + i.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
     if ((pl.strengths || []).length) h += '<p style="margin:10px 0 0;font-size:13.5px"><b>Strengths to recognise:</b> ' + esc(pl.strengths.join('; ')) + '</p>';
     h += '</div>';
   }
@@ -1018,6 +1151,10 @@ document.addEventListener('click', e => {
     s.callIds = list.map(c => c.interactionId); saveSoon(s); render(); return;
   }
   if (act === 'build') { buildPlan(s); return; }
+  if (act === 'questions') { buildQuestions(s); return; }
+  if (act === 'pre') { buildPre(s); return; }
+  if (act === 'copy-pre') { const p = preParts(s); copyRich(p.html, p.plain); return; }
+  if (act === 'mailto-pre') { const p = preParts(s); location.href = 'mailto:?subject=' + encodeURIComponent(s.preEmail.subject || '') + '&body=' + encodeURIComponent(p.plain); return; }
   if (act === 'outcome') { buildOutcome(s); return; }
   if (act === 'copy') { copy(String(getPath(s, t.dataset.path) || '')); return; }
   if (act === 'copy-due') { copy(fmtDate(getPath(s, 'outcome.hibob.dueDate'))); return; }
@@ -1042,6 +1179,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute('data-lines')) v = v.split('\n').map(x => x.trim()).filter(Boolean);
   setPath(s, p, v);
   saveSoon(s);
+  if (el.hasAttribute('data-rerender') && $('#prePreview')) $('#prePreview').innerHTML = preParts(s).html;
 });
 document.addEventListener('change', e => {
   const el = e.target;
@@ -1055,6 +1193,12 @@ document.addEventListener('change', e => {
     render();
     window.scrollTo(0, y);
     const nb = document.querySelector('.pick-list'); if (nb) nb.scrollTop = sy;
+  } else if (el.dataset && el.dataset.precall) {
+    const s = curSession(); if (!s || !s.preEmail) return;
+    const id = el.dataset.precall, list = s.preEmail.calls || [];
+    s.preEmail.calls = el.checked ? list.concat([{ id, why: '' }]) : list.filter(x => x.id !== id);
+    saveSoon(s);
+    render();
   } else if (el.dataset && el.dataset.bind === 'date') render();
 });
 let lastAdv = '';

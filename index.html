@@ -255,7 +255,7 @@ dialog::backdrop{background:rgba(36,38,43,.35)}
 <div id="toast"></div>
 <dialog id="keyDlg">
   <h2 style="font-size:19px;margin-bottom:6px">AI settings</h2>
-  <p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">The QA insights, HiBob goal and email are written by Google Gemini. Your key is stored only in this browser and never published with the site.</p>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">The QA insights, HiBob goal and email are written by Google Gemini. The site's key is set in GitHub. A key pasted here is saved in this browser only.</p>
   <label class="f" for="keyIn">Gemini API key</label>
   <input class="in" id="keyIn" type="password" autocomplete="off" placeholder="Paste your key">
   <p id="keySrc" style="font-size:12.5px;color:var(--muted);margin:8px 0 0"></p>
@@ -488,14 +488,16 @@ function setPath(o, p, v) {
   x[ks[ks.length - 1]] = v;
 }
 
+const BUILT_KEY = 'GEMINI_KEY_PLACEHOLDER';
+const hasBuiltKey = () => !!BUILT_KEY && BUILT_KEY !== 'GEMINI_KEY_' + 'PLACEHOLDER';
 function getKey() {
-  try { return localStorage.getItem('grow-gemini-key') || localStorage.getItem('unsw-gemini-key') || ''; } catch (e) { return ''; }
+  try { return localStorage.getItem('grow-gemini-key') || (hasBuiltKey() ? BUILT_KEY : '') || localStorage.getItem('unsw-gemini-key') || ''; } catch (e) { return hasBuiltKey() ? BUILT_KEY : ''; }
 }
 function openKey() {
   const own = (() => { try { return localStorage.getItem('grow-gemini-key'); } catch (e) { return null; } })();
   const hub = (() => { try { return localStorage.getItem('unsw-gemini-key'); } catch (e) { return null; } })();
   $('#keyIn').value = '';
-  $('#keySrc').textContent = own ? 'A key is saved for this tool.' : hub ? 'Using the key saved in this browser for the Advisor Hub. Paste a key to use a different one.' : 'No key saved yet.';
+  $('#keySrc').textContent = own ? 'A key is saved in this browser and is used instead of the built-in key.' : hasBuiltKey() ? 'The site has a built-in key, so nothing is needed here. Paste a key only to override it in this browser.' : hub ? 'Using the key saved in this browser for the Advisor Hub. Paste a key to use a different one.' : 'No key saved yet.';
   $('#keyDlg').showModal();
 }
 function deDash(x) {

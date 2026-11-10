@@ -1071,7 +1071,7 @@ const STUCK = [
 ];
 function stepDone(s, k) {
   if (k === 'prep') return !!s.plan;
-  if (k === 'plan') return !!s.plan && !!Object.values(s.notes || {}).some(v => String(v || '').trim());
+  if (k === 'plan') return !!s.plan;
   if (k === 'pre') return !!s.preEmail;
   if (k === 'notes') return !!s.outcome;
   return !!s.complete;

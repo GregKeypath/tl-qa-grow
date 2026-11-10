@@ -315,7 +315,7 @@ const STEP_LIST = [
 
 let QA = null, QAerr = '', QTEXT = Object.assign({}, QTEXT_DEFAULT);
 let SESS = {}, sessLoaded = false, sessErr = '';
-let winSel = '90', sessFilter = 'open';
+let winSel = '', sessFilter = 'open';
 const openCalls = new Set();
 
 const $ = s => document.querySelector(s);
@@ -429,6 +429,7 @@ function resultPill(c) {
 }
 function inWindow(calls, w) {
   if (w === 'all') return calls;
+  if (/^[0-9]{4}-[0-9]{2}$/.test(w)) return calls.filter(c => String(c.interactionDate).startsWith(w));
   const from = addDays(today(), -(+w));
   return calls.filter(c => String(c.interactionDate) >= from);
 }
@@ -718,12 +719,12 @@ function vAdvisers() {
   ['UNSW', 'MBS'].forEach(pt => {
     h += '<div class="section-t"><h2>' + pt + '</h2><span class="tag ' + pt.toLowerCase() + '">' + ADVISERS.filter(a => a.partner === pt).length + ' advisers</span></div><div class="adv-grid">';
     ADVISERS.filter(a => a.partner === pt).forEach(a => {
-      const calls = callsFor(a.name), last5 = calls.slice(0, 5), st = stats(last5);
+      const calls = callsFor(a.name), lm = monthsOf(calls)[0], last5 = lm ? calls.filter(c => String(c.interactionDate).startsWith(lm)) : [], st = stats(last5);
       const ss = sessionsFor(a.name), last = ss[0];
       const ov = st.overall, r = ratingPct(ov);
       h += '<div class="card adv ' + pt.toLowerCase() + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
       h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + cdl(calls[0]) : a.partner === 'MBS' ? 'QA entered manually, none yet' : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
-      h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>last ' + (last5.length || 5) + ' calls</span></div></div>';
+      h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>' + (lm ? monthLabel(lm) + ', ' + last5.length + ' call' + (last5.length === 1 ? '' : 's') : 'no calls') + '</span></div></div>';
       if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
       h += '<div class="adv-f">';
       if (st.fails) h += '<span class="pill fail">' + st.fails + ' compliance fail' + (st.fails > 1 ? 's' : '') + '</span>';
@@ -768,11 +769,11 @@ function callDetail(c) {
 function vAdviser(name) {
   const a = ADVISERS.find(x => x.name === name);
   if (!a) return '<div class="empty">Adviser not found. <a href="#/advisers">Back to advisers</a></div>';
-  const all = callsFor(name), calls = inWindow(all, winSel), st = stats(calls), weak = weakest(st, 2);
+  const all = callsFor(name), months = monthsOf(all), win = winSel === 'all' || months.includes(winSel) ? winSel : (months[0] || 'all'), calls = inWindow(all, win), st = stats(calls), weak = weakest(st, 2);
   const ss = sessionsFor(name);
   let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / ' + esc(a.partner) + '</div>';
   h += '<div class="ph"><div><h1>' + esc(name) + '</h1><p>' + all.length + ' QA calls' + (all.some(c => c.manual) ? ' (' + all.filter(c => c.manual).length + ' entered manually, ' + all.filter(c => c.manual && !c.scored).length + ' to score)' : ' from the QA dashboard') + '. ' + ss.length + ' coaching session' + (ss.length === 1 ? '' : 's') + ' recorded.</p></div><div class="sp"></div>';
-  h += '<div class="seg">' + [['30', '30 days'], ['90', '90 days'], ['all', 'All']].map(w => '<button data-act="win" data-win="' + w[0] + '" class="' + (winSel === w[0] ? 'on' : '') + '">' + w[1] + '</button>').join('') + '</div>';
+  h += '<div class="seg">' + months.slice(0, 6).map(m => [m, monthLabel(m)]).concat([['all', 'All months']]).map(w => '<button data-act="win" data-win="' + w[0] + '" class="' + (win === w[0] ? 'on' : '') + '">' + w[1] + '</button>').join('') + '</div>';
   h += '<button class="ghost" data-act="go" data-href="#/qa/' + encodeURIComponent(name) + '/new">+ Add QA call</button><button class="btn green" data-act="new-session" data-adviser="' + esc(name) + '">Start coaching session</button></div>';
   h += loadingNote();
   h += '<div class="tiles"><div class="tile"><span>Calls in view</span><b>' + calls.length + '</b></div><div class="tile ' + ratingPct(st.overall).cls + '" title="As on the QA dashboard, an auto-fail counts as 0%"><span>Average score' + (st.fails && isNum(st.raw) ? ' (' + Math.round(st.raw) + '% before auto-fails)' : '') + '</span><b style="color:var(--bc)">' + (isNum(st.overall) ? Math.round(st.overall) + '%' : '–') + '</b></div><div class="tile"><span>Compliance fails</span><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b></div><div class="tile"><span>Last coached</span><b style="font-size:18px">' + (ss.find(x => x.complete) ? fmtDate(ss.find(x => x.complete).date) : 'Not yet') + '</b></div></div>';
@@ -894,7 +895,7 @@ function vPrep(s) {
   const picked = all.filter(c => sel.has(c.interactionId)), st = stats(picked), weak = weakest(st, 3);
   const p = s.prep || {};
   let h = loadingNote() + '<div class="split"><div class="card"><h2>QA calls to cover</h2><p class="sub">Tick the evaluations this session should draw on</p>';
-  h += '<div class="row">' + monthsOf(all).slice(0, 4).map(m => '<button class="ghost' + (isMonthSel(all, sel, m) ? ' msel' : '') + '" data-act="preset" data-preset="m:' + m + '">' + monthLabel(m) + ' <span class="mono" style="color:var(--muted)">' + all.filter(c => String(c.interactionDate).startsWith(m)).length + '</span></button>').join('') + '<button class="ghost" data-act="preset" data-preset="5">Last 5</button><button class="ghost" data-act="preset" data-preset="fails">Compliance fails</button><button class="ghost" data-act="preset" data-preset="none">Clear</button><span style="margin-left:auto;font-size:13px;color:var(--muted)">' + sel.size + ' ticked</span></div>';
+  h += '<div class="row">' + monthsOf(all).map(m => '<button class="ghost' + (isMonthSel(all, sel, m) ? ' msel' : '') + '" data-act="preset" data-preset="m:' + m + '">' + monthLabel(m) + ' <span class="mono" style="color:var(--muted)">' + all.filter(c => String(c.interactionDate).startsWith(m)).length + '</span></button>').join('') + '<button class="ghost" data-act="preset" data-preset="fails">Compliance fails</button><button class="ghost" data-act="preset" data-preset="none">Clear</button><span style="margin-left:auto;font-size:13px;color:var(--muted)">' + sel.size + ' ticked</span></div>';
   h += '<div class="pick-list">' + (all.length ? all.map(c => '<label class="pick"><input type="checkbox" data-call="' + esc(c.interactionId) + '"' + (sel.has(c.interactionId) ? ' checked' : '') + '><span class="mono">' + esc(cdl(c)) + '</span><span class="mono ' + ratingPct(c.overallScore).cls + '" style="color:var(--bc);font-weight:600">' + (isNum(c.overallScore) ? c.overallScore + '%' : '–') + '</span><span class="res">' + resultPill(c) + '</span>' + (c.manual && !c.scored ? '<a class="foc" href="#/qa/' + encodeURIComponent(c.advisor) + '/' + c.id + '">Score this call</a>' : '<span class="foc" title="' + esc(toText(c.primaryCoachingFocus)) + '">' + esc(clip(c.primaryCoachingFocus, 120)) + '</span>') + '</label>').join('') : '<div class="empty">' + (QA ? 'No QA calls for ' + esc(first(s.adviser)) + ' on the dashboard. Work from your notes.' : 'QA data not loaded.') + '</div>') + '</div></div>';
   h += '<div class="grid"><div class="card"><h2>Snapshot of ticked calls</h2>';
   if (picked.length) {
@@ -1054,7 +1055,8 @@ document.addEventListener('change', e => {
     const nb = document.querySelector('.pick-list'); if (nb) nb.scrollTop = sy;
   } else if (el.dataset && el.dataset.bind === 'date') render();
 });
-window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+let lastAdv = '';
+window.addEventListener('hashchange', () => { const r = route(); if (r.page === 'adviser' && r.a !== lastAdv) { winSel = ''; lastAdv = r.a; } render(); window.scrollTo(0, 0); });
 window.addEventListener('beforeunload', e => { if ($('#saveState').textContent === 'Saving…') { e.preventDefault(); e.returnValue = ''; } });
 if (!location.hash) location.hash = '#/advisers';
 render();

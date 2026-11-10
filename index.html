@@ -242,7 +242,6 @@ dialog::backdrop{background:rgba(36,38,43,.35)}
   <div class="sp"></div>
   <span class="save" id="saveState"></span>
   <span class="chip load" id="qaChip"><i></i>Loading QA data</span>
-  <button class="ghost" data-act="key">AI settings</button>
 </header>
 <div class="shell">
   <nav class="side" id="side">
@@ -255,19 +254,6 @@ dialog::backdrop{background:rgba(36,38,43,.35)}
 </div>
 <div class="busy hidden" id="busy"><div class="busy-card"><span class="spin"></span><b id="busyMsg">Working</b></div></div>
 <div id="toast"></div>
-<dialog id="keyDlg">
-  <h2 style="font-size:19px;margin-bottom:6px">AI settings</h2>
-  <p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">The QA insights, HiBob goal and email are written by Google Gemini. The site's key is set in GitHub. A key pasted here is saved in this browser only.</p>
-  <label class="f" for="keyIn">Gemini API key</label>
-  <input class="in" id="keyIn" type="password" autocomplete="off" placeholder="Paste your key">
-  <p id="keySrc" style="font-size:12.5px;color:var(--muted);margin:8px 0 0"></p>
-  <div class="actions" style="justify-content:flex-end">
-    <button class="link danger" data-act="key-clear">Remove key</button>
-    <span style="flex:1"></span>
-    <button class="ghost" data-act="key-close">Cancel</button>
-    <button class="btn green" data-act="key-save">Save</button>
-  </div>
-</dialog>
 <script>
 const QA_BASE = 'https://keypath-au.github.io/BU2-Team-Dashboard/';
 const QA_URL = QA_BASE + 'qa-dashboard.html';
@@ -496,13 +482,6 @@ const hasBuiltKey = () => !!BUILT_KEY && BUILT_KEY !== 'GEMINI_KEY_' + 'PLACEHOL
 function getKey() {
   try { return localStorage.getItem('grow-gemini-key') || (hasBuiltKey() ? BUILT_KEY : '') || localStorage.getItem('unsw-gemini-key') || ''; } catch (e) { return hasBuiltKey() ? BUILT_KEY : ''; }
 }
-function openKey() {
-  const own = (() => { try { return localStorage.getItem('grow-gemini-key'); } catch (e) { return null; } })();
-  const hub = (() => { try { return localStorage.getItem('unsw-gemini-key'); } catch (e) { return null; } })();
-  $('#keyIn').value = '';
-  $('#keySrc').textContent = own ? 'A key is saved in this browser and is used instead of the built-in key.' : hasBuiltKey() ? 'The site has a built-in key, so nothing is needed here. Paste a key only to override it in this browser.' : hub ? 'Using the key saved in this browser for the Advisor Hub. Paste a key to use a different one.' : 'No key saved yet.';
-  $('#keyDlg').showModal();
-}
 function deDash(x) {
   if (typeof x === 'string') return x.replace(/\s*—\s*/g, ', ').replace(/\s+–\s+/g, ', ').replace(/–/g, '-');
   if (Array.isArray(x)) return x.map(deDash);
@@ -511,7 +490,7 @@ function deDash(x) {
 }
 async function ai(prompt) {
   const key = getKey();
-  if (!key) { openKey(); throw new Error('Add your Gemini key in AI settings first.'); }
+  if (!key) throw new Error('The AI key is missing from the site. Check the GEMINI_KEY secret in GitHub and redeploy.');
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + encodeURIComponent(key), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -521,7 +500,7 @@ async function ai(prompt) {
   try { data = await res.json(); } catch (e) { }
   if (!res.ok) {
     const m = data && data.error && data.error.message;
-    if (res.status === 401 || res.status === 403 || /api key/i.test(m || '')) throw new Error('Gemini refused the key. Check it in AI settings. ' + (m || ''));
+    if (res.status === 401 || res.status === 403 || /api key/i.test(m || '')) throw new Error('Gemini refused the key. Check the GEMINI_KEY secret in GitHub. ' + (m || ''));
     throw new Error('Gemini error ' + res.status + (m ? ': ' + m : ''));
   }
   const cand = data && data.candidates && data.candidates[0];
@@ -568,7 +547,7 @@ function prevText(s) {
   const p = prevSession(s);
   if (!p) return 'No earlier coaching session recorded.';
   const h = (p.outcome && p.outcome.hibob) || {};
-  return 'Previous session ' + fmtDate(p.date) + '. Goal: ' + (h.title || 'n/a') + '. Key results: ' + (h.keyResults || []).join(' | ') + '. Adviser commitments: ' + ((p.notes && p.notes.commitments) || 'n/a') + '.';
+  return 'Previous session ' + smLabel(p) + '. Goal: ' + (h.title || 'n/a') + '. Key results: ' + (h.keyResults || []).join(' | ') + '. Adviser commitments: ' + ((p.notes && p.notes.commitments) || 'n/a') + '.';
 }
 const RULES = [
   'Write in Australian English (organise, behaviour, enrol, enrolment, program).',
@@ -614,7 +593,7 @@ function outcomePrompt(s) {
   const due = n.followUp || addDays(s.date || today(), 42);
   return [
     'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a GROW coaching session with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
-    'Session date: ' + fmtDate(s.date) + '. Today: ' + fmtDate(today()) + '.',
+    'Session month: ' + smLabel(s) + '. Today: ' + fmtDate(today()) + '.',
     '',
     'QA framework FY27: Connect (Q1 opening, Q2 listening), Explore (Q3 questioning, Q4 summarise and confirm understanding), Quality of Advice (Q5 appropriate advice, Q6 options presented), Resolve (Q7 close and next steps, Q8 student supported). Rated 1 to 5: Does Not Meet 1 to 2, Meets 3, Exceeds 4 to 5. Compliance is pass or fail.',
     '',
@@ -713,6 +692,11 @@ async function buildQuestions(s) {
   } catch (e) { toast(e.message || String(e), true); }
   finally { busy(''); render(); }
 }
+function smKey(s) {
+  const calls = ((s && s.callIds) || []).map(callById).filter(Boolean);
+  return calls.map(c => c.qaMonth || String(c.interactionDate).slice(0, 7)).sort().pop() || String((s && s.date) || today()).slice(0, 7);
+}
+function smLabel(s) { const m = smKey(s); return MON_FULL[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4); }
 function sessionMonth(s) {
   const calls = (s.callIds || []).map(callById).filter(Boolean);
   const m = calls.map(c => c.qaMonth || String(c.interactionDate).slice(0, 7)).sort().pop();
@@ -878,7 +862,7 @@ function vAdvisers() {
       if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
       h += '<div class="adv-f">';
       if (st.fails) h += '<span class="pill fail">' + st.fails + ' compliance fail' + (st.fails > 1 ? 's' : '') + '</span>';
-      if (last) { const so = statusOf(last); h += '<span class="pill ' + so.cls + '">' + so.label + '</span><span>' + (last.complete ? 'Coached ' : 'Session ') + fmtDate(last.date, false) + '</span>'; }
+      if (last) { const so = statusOf(last); h += '<span class="pill ' + so.cls + '">' + so.label + '</span><span>' + (last.complete ? 'Coached ' : 'Session ') + smLabel(last) + '</span>'; }
       else h += '<span>Not coached here yet</span>';
       h += '</div></div>';
     });
@@ -926,7 +910,7 @@ function vAdviser(name) {
   h += '<div class="seg">' + months.slice(0, 6).map(m => [m, monthLabel(m)]).concat([['all', 'All months']]).map(w => '<button data-act="win" data-win="' + w[0] + '" class="' + (win === w[0] ? 'on' : '') + '">' + w[1] + '</button>').join('') + '</div>';
   h += '<button class="ghost" data-act="go" data-href="#/qa/' + encodeURIComponent(name) + '/new">+ Add QA call</button><button class="btn green" data-act="new-session" data-adviser="' + esc(name) + '">Start coaching session</button></div>';
   h += loadingNote();
-  h += '<div class="tiles"><div class="tile"><span>Calls in view</span><b>' + calls.length + '</b></div><div class="tile ' + ratingPct(st.overall).cls + '" title="As on the QA dashboard, an auto-fail counts as 0%"><span>Average score' + (st.fails && isNum(st.raw) ? ' (' + Math.round(st.raw) + '% before auto-fails)' : '') + '</span><b style="color:var(--bc)">' + (isNum(st.overall) ? Math.round(st.overall) + '%' : '–') + '</b></div><div class="tile"><span>Compliance fails</span><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b></div><div class="tile"><span>Last coached</span><b style="font-size:18px">' + (ss.find(x => x.complete) ? fmtDate(ss.find(x => x.complete).date) : 'Not yet') + '</b></div></div>';
+  h += '<div class="tiles"><div class="tile"><span>Calls in view</span><b>' + calls.length + '</b></div><div class="tile ' + ratingPct(st.overall).cls + '" title="As on the QA dashboard, an auto-fail counts as 0%"><span>Average score' + (st.fails && isNum(st.raw) ? ' (' + Math.round(st.raw) + '% before auto-fails)' : '') + '</span><b style="color:var(--bc)">' + (isNum(st.overall) ? Math.round(st.overall) + '%' : '–') + '</b></div><div class="tile"><span>Compliance fails</span><b style="color:' + (st.fails ? 'var(--dnm)' : 'inherit') + '">' + st.fails + '</b></div><div class="tile"><span>Last coached</span><b style="font-size:18px">' + (ss.find(x => x.complete) ? smLabel(ss.find(x => x.complete)) : 'Not yet') + '</b></div></div>';
   h += '<div class="split"><div class="card"><h2>Sections</h2><p class="sub">Average across the calls in view, on the 1 to 5 scale</p>';
   h += SECTIONS.map(s => { const p = st.sec[s.key], r = ratingPct(p); return '<div class="secrow ' + r.cls + '"><b>' + s.label + '</b><div class="bar"><i style="width:' + (isNum(p) ? p : 0) + '%"></i></div><span class="mono">' + (isNum(p) ? (p / 20).toFixed(1) + '/5' : '–') + '</span><span class="pill">' + r.label + '</span></div>'; }).join('');
   h += '</div><div class="card"><h2>Questions</h2><p class="sub">Lowest scoring questions are marked as a focus</p>';
@@ -990,7 +974,7 @@ async function saveQa(name, id) {
 }
 function histCard(s) {
   const so = statusOf(s), t = (s.outcome && s.outcome.hibob && s.outcome.hibob.title) || (s.plan && s.plan.focus) || 'Session in preparation';
-  return '<div class="hcard" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><span class="d">' + fmtDate(s.date) + '</span><div style="min-width:0"><div class="t">' + esc(t) + '</div><div class="s">' + esc(s.adviser) + ((s.callIds || []).length ? ', ' + s.callIds.length + ' QA calls' : '') + '</div></div><span class="pill ' + so.cls + '">' + so.label + '</span></div>';
+  return '<div class="hcard" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><span class="d">' + smLabel(s) + '</span><div style="min-width:0"><div class="t">' + esc(t) + '</div><div class="s">' + esc(s.adviser) + ((s.callIds || []).length ? ', ' + s.callIds.length + ' QA calls' : '') + '</div></div><span class="pill ' + so.cls + '">' + so.label + '</span></div>';
 }
 function vSessions() {
   if (!sessLoaded) return '<div class="empty">Loading sessions…</div>';
@@ -1001,10 +985,10 @@ function vSessions() {
   let h = '<div class="ph"><div><h1>Sessions</h1><p>Every coaching session, newest first.</p></div><div class="sp"></div><div class="seg">' + [['open', 'Open'], ['done', 'Complete'], ['all', 'All']].map(f => '<button data-act="sfilter" data-f="' + f[0] + '" class="' + (sessFilter === f[0] ? 'on' : '') + '">' + f[1] + ' ' + counts[f[0]] + '</button>').join('') + '</div></div>';
   if (sessErr) h += '<div class="callout">Could not load saved sessions (' + esc(sessErr) + ').</div>';
   if (!list.length) return h + '<div class="card empty">No sessions here yet. Go to <a href="#/advisers">Advisers</a> to start one.</div>';
-  h += '<div class="card" style="padding:4px 8px;overflow-x:auto"><table class="table"><thead><tr><th>Date</th><th>Adviser</th><th>Focus or goal</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  h += '<div class="card" style="padding:4px 8px;overflow-x:auto"><table class="table"><thead><tr><th>Month</th><th>Adviser</th><th>Focus or goal</th><th>Due</th><th>Status</th></tr></thead><tbody>';
   list.forEach(s => {
     const so = statusOf(s), hb = s.outcome && s.outcome.hibob;
-    h += '<tr class="click" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><td class="mono" style="white-space:nowrap">' + fmtDate(s.date) + '</td><td style="white-space:nowrap"><b>' + esc(s.adviser) + '</b></td><td>' + esc((hb && hb.title) || (s.plan && s.plan.focus) || '') + '</td><td class="mono" style="white-space:nowrap">' + (hb && hb.dueDate ? fmtDate(hb.dueDate) : '') + '</td><td><span class="pill ' + so.cls + '">' + so.label + '</span></td></tr>';
+    h += '<tr class="click" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><td class="mono" style="white-space:nowrap">' + smLabel(s) + '</td><td style="white-space:nowrap"><b>' + esc(s.adviser) + '</b></td><td>' + esc((hb && hb.title) || (s.plan && s.plan.focus) || '') + '</td><td class="mono" style="white-space:nowrap">' + (hb && hb.dueDate ? fmtDate(hb.dueDate) : '') + '</td><td><span class="pill ' + so.cls + '">' + so.label + '</span></td></tr>';
   });
   return h + '</tbody></table></div>';
 }
@@ -1018,8 +1002,70 @@ function vGuide() {
   let h = '<div class="ph"><div><h1>GROW guide</h1><p>How a session runs in this tool, and what each stage is for.</p></div></div>';
   h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, pick the month of QA calls to cover and add your own observations.</li><li><b>QA insights.</b> The AI reads all the calls together and picks the one coaching focus with the most impact, with an insight for each QA group behind it and coaching questions you can ask. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
   h += '<div class="guide">' + g.map(x => '<div class="card stage ' + x[0] + '"><div class="stage-h"><span class="L">' + x[1] + '</span><h3>' + x[2] + '</h3></div><p style="margin:0 0 6px">' + x[3] + '</p><ul class="qlist">' + x[4].map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>').join('') + '</div>';
+  h += '<div class="section-t"><h2>If you get stuck</h2><span class="chip">Questions that work with any adviser</span></div>';
+  h += '<p style="margin:-4px 0 14px;color:var(--muted)">Ask one, then pause. Silence is fine: give them a few seconds before you fill it.</p>';
+  h += '<div class="guide">' + STUCK.map(x => '<div class="card" style="border-top:4px solid ' + x[0] + '"><h3 style="margin-bottom:4px">' + esc(x[1]) + '</h3><p style="margin:0 0 6px;font-size:13px;color:var(--muted)">' + esc(x[2]) + '</p><ul class="qlist">' + x[3].map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>').join('') + '</div>';
   return h;
 }
+const STUCK = [
+  ['var(--g)', 'Opening the conversation', 'Settle in and hand them the lead early.', [
+    'How have your calls been feeling this month?',
+    'What did you notice when you listened back?',
+    'Which of the calls stood out to you, and why?',
+    'What would make this half hour worth your time?',
+    'What are you most proud of from this month?'
+  ]],
+  ['var(--r)', 'When they go quiet', 'Make it easier to answer, not harder.', [
+    'Take your time. What is your first thought?',
+    'If you had to guess, what would you say?',
+    'What would a student say about that call?',
+    'Is there a moment in the call that comes to mind?',
+    'What would you tell a new adviser who made that call?'
+  ]],
+  ['var(--r)', 'Going deeper', 'Stay curious before moving to solutions.', [
+    'Tell me more about that.',
+    'What was happening for you at that point in the call?',
+    'What makes that part harder than the rest?',
+    'How often does that come up for you?',
+    'What did the student need in that moment?',
+    'What else?'
+  ]],
+  ['var(--dnm)', 'When they get defensive or hard on themselves', 'Acknowledge it, then bring it back to the calls.', [
+    'That sounds frustrating. What would help?',
+    'What went well on that call that we can build on?',
+    'If this was a mate\'s call, what feedback would you give them?',
+    'What is in your control here?',
+    'What would a small step forward look like?'
+  ]],
+  ['var(--o)', 'Finding options', 'Get several ideas on the table before choosing one.', [
+    'What could you try on your next call?',
+    'What has worked for you in a similar situation?',
+    'What would you do if you had a bit more time on the call?',
+    'Who in the team does this well? What do they do?',
+    'If there were no wrong answers, what would you try?',
+    'Would it help if I shared an idea?'
+  ]],
+  ['var(--w)', 'Getting to a commitment', 'Make it specific, measurable and theirs.', [
+    'Which option feels right for you?',
+    'What exactly will you do, and when will you start?',
+    'How will you know it is working?',
+    'What might get in the way?',
+    'On a scale of 1 to 10, how confident are you? What would make it a 10?',
+    'What support do you need from me?'
+  ]],
+  ['var(--focus)', 'Checking understanding', 'Play it back so you both leave clear.', [
+    'Can you sum up what you are taking away?',
+    'What is the one thing you will remember from today?',
+    'Have I understood that right?',
+    'Is there anything we have missed?'
+  ]],
+  ['var(--muted)', 'Closing the session', 'End on their commitment and the next check in.', [
+    'How are you feeling about it now?',
+    'What would you like me to look out for on your next calls?',
+    'When shall we check in on how it is going?',
+    'What was most useful about today?'
+  ]]
+];
 function stepDone(s, k) {
   if (k === 'prep') return !!s.plan;
   if (k === 'plan') return !!s.plan && !!Object.values(s.notes || {}).some(v => String(v || '').trim());
@@ -1033,7 +1079,7 @@ function vSession(id, step) {
   step = STEP_LIST.some(x => x.key === step) ? step : 'prep';
   const so = statusOf(s);
   let h = '<div class="crumb"><a href="#/advisers">Advisers</a> / <a href="#/adviser/' + encodeURIComponent(s.adviser) + '">' + esc(s.adviser) + '</a></div>';
-  h += '<div class="ph"><div><h1>Coaching session: ' + esc(first(s.adviser)) + '</h1><p class="row" style="gap:10px;margin-top:6px"><span class="pill ' + so.cls + '">' + so.label + '</span><label style="font-size:13px;color:var(--muted)">Session date <input class="in" type="date" data-bind="date" value="' + esc(s.date || '') + '" style="width:auto;padding:5px 8px;margin-left:4px"></label></p></div><div class="sp"></div><button class="link danger" data-act="del">Delete session</button></div>';
+  h += '<div class="ph"><div><h1>Coaching session: ' + esc(first(s.adviser)) + '</h1><p class="row" style="gap:10px;margin-top:6px"><span class="pill ' + so.cls + '">' + so.label + '</span><span style="font-size:13px;color:var(--muted)">' + esc(smLabel(s)) + ' QA session</span></p></div><div class="sp"></div><button class="link danger" data-act="del">Delete session</button></div>';
   h += '<div class="steps">' + STEP_LIST.map((x, i) => '<button class="step' + (x.key === step ? ' on' : '') + (stepDone(s, x.key) ? ' done' : '') + '" data-act="go" data-href="#/session/' + s.id + '/' + x.key + '"><i>' + (stepDone(s, x.key) && x.key !== step ? '✓' : i + 1) + '</i><div><b>' + x.label + '</b><span>' + x.sub + '</span></div></button>').join('') + '</div>';
   if (step === 'prep') h += vPrep(s);
   else if (step === 'plan') h += vPlan(s);
@@ -1156,7 +1202,6 @@ document.addEventListener('click', e => {
   if (act === 'sfilter') { sessFilter = t.dataset.f; render(); return; }
   if (act === 'new-session') { newSession(t.dataset.adviser); return; }
   if (act === 'reload-qa') { QAerr = ''; render(); loadQA(); return; }
-  if (act === 'key') { openKey(); return; }
   if (act === 'qa-save') { saveQa(t.dataset.adviser, t.dataset.id); return; }
   if (act === 'qa-del') {
     if (!confirm('Delete this QA call? This cannot be undone.')) return;
@@ -1165,9 +1210,6 @@ document.addEventListener('click', e => {
     location.hash = '#/adviser/' + encodeURIComponent(t.dataset.adviser);
     return;
   }
-  if (act === 'key-close') { $('#keyDlg').close(); return; }
-  if (act === 'key-save') { const v = $('#keyIn').value.trim(); if (v) { try { localStorage.setItem('grow-gemini-key', v); } catch (x) { } toast('Key saved in this browser'); } $('#keyDlg').close(); return; }
-  if (act === 'key-clear') { try { localStorage.removeItem('grow-gemini-key'); } catch (x) { } toast('Key removed'); $('#keyDlg').close(); return; }
   if (!s) return;
   if (act === 'preset') {
     const all = callsFor(s.adviser), p = t.dataset.preset;

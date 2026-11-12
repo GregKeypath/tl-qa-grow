@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pod C GROW Coaching</title>
+<script>(function () { var m = location.search.match(/[?&]call=([0-9a-fA-F-]{36})/); if (m) location.replace('https://apps.mypurecloud.com.au/directory/#/analytics/interactions/' + m[1] + '/admin/'); })();</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231f9461'/%3E%3Cpath d='M32 50V30' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M32 34c0-9 6-15 16-15 0 10-6 15-16 15zM32 30c0-7-5-12-13-12 0 8 5 12 13 12z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -775,11 +776,15 @@ function preCalls(s) {
   const chosen = new Set(((s.preEmail || {}).calls || []).map(x => x.id));
   return order.filter(c => chosen.has(c.interactionId) && c.transcriptUrl);
 }
+function shareLink(c) {
+  const m = String(c.transcriptUrl || '').match(/interactions\/([0-9a-fA-F-]{36})/);
+  return m ? 'https://gregkeypath.github.io/tl-qa-grow/?call=' + m[1] : c.transcriptUrl;
+}
 function preParts(s) {
   const pe = s.preEmail || {}, links = preCalls(s);
-  const plain = (pe.body || '').replace('[CALL LINKS]', links.map((c, i) => '• Call ' + (i + 1) + ': ' + c.transcriptUrl).join('\n'));
+  const plain = (pe.body || '').replace('[CALL LINKS]', links.map((c, i) => '• Call ' + (i + 1) + ': ' + shareLink(c)).join('\n'));
   const html = (pe.body || '').split(/\n\s*\n/).map(par => {
-    if (par.trim() === '[CALL LINKS]') return '<ul>' + links.map((c, i) => '<li><a href="' + esc(c.transcriptUrl) + '">Call ' + (i + 1) + '</a></li>').join('') + '</ul>';
+    if (par.trim() === '[CALL LINKS]') return '<ul>' + links.map((c, i) => '<li><a href="' + esc(shareLink(c)) + '">Call ' + (i + 1) + '</a></li>').join('') + '</ul>';
     const lines = par.split('\n');
     if (lines.every(l => /^\s*•/.test(l))) return '<ul>' + lines.map(l => '<li>' + esc(l.replace(/^\s*•\s*/, '')) + '</li>').join('') + '</ul>';
     return '<p>' + lines.map(esc).join('<br>') + '</p>';

@@ -782,9 +782,9 @@ function shareLink(c) {
 }
 function preParts(s) {
   const pe = s.preEmail || {}, links = preCalls(s);
-  const plain = (pe.body || '').replace('[CALL LINKS]', links.map((c, i) => '• Call ' + (i + 1) + ': ' + shareLink(c)).join('\n'));
+  const plain = (pe.body || '').replace('[CALL LINKS]', links.map((c, i) => '• Call ' + (i + 1) + ': ' + c.transcriptUrl).join('\n'));
   const html = (pe.body || '').split(/\n\s*\n/).map(par => {
-    if (par.trim() === '[CALL LINKS]') return '<ul>' + links.map((c, i) => '<li><a href="' + esc(shareLink(c)) + '">Call ' + (i + 1) + '</a></li>').join('') + '</ul>';
+    if (par.trim() === '[CALL LINKS]') return '<ul>' + links.map((c, i) => '<li><a href="' + esc(c.transcriptUrl) + '">Call ' + (i + 1) + '</a></li>').join('') + '</ul>';
     const lines = par.split('\n');
     if (lines.every(l => /^\s*•/.test(l))) return '<ul>' + lines.map(l => '<li>' + esc(l.replace(/^\s*•\s*/, '')) + '</li>').join('') + '</ul>';
     return '<p>' + lines.map(esc).join('<br>') + '</p>';

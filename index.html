@@ -848,7 +848,13 @@ function render() {
   else if (r.page === 'guide') m.innerHTML = vGuide();
   else if (r.page === 'qa') m.innerHTML = vQaForm(r.a, r.b);
   else m.innerHTML = vAdvisers();
+  requestAnimationFrame(() => m.querySelectorAll('textarea.in').forEach(fitBox));
 }
+function fitBox(el) {
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+window.addEventListener('resize', () => document.querySelectorAll('textarea.in').forEach(fitBox));
 function loadingNote() {
   if (!QA && !QAerr) return '<div class="callout">Loading QA findings from the QA dashboard…</div>';
   if (QAerr) return '<div class="callout">Could not load the QA dashboard (' + esc(QAerr) + '). You can still prepare sessions from your own notes. <button class="link" data-act="reload-qa">Try again</button></div>';
@@ -1260,6 +1266,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute('data-lines')) v = v.split('\n').map(x => x.trim()).filter(Boolean);
   setPath(s, p, v);
   saveSoon(s);
+  if (el.matches('textarea.in')) fitBox(el);
   if (el.hasAttribute('data-rerender') && $('#prePreview')) $('#prePreview').innerHTML = preParts(s).html;
 });
 document.addEventListener('change', e => {

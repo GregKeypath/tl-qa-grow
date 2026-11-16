@@ -593,7 +593,7 @@ function growPrompt(s) {
     '3. Choose ONE coaching focus for this session. Greg coaches to a single focus at a time, so pick the one habit or gap with the highest impact, weighing compliance (always the focus if any call failed it), how often it recurs across the calls, the section weightings, any earlier coaching goal and Greg\'s notes. Give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Return exactly one item.',
     '4. The focus field is that same single focus, as one line.',
     '5. Recognise 2 or 3 genuine strengths seen across the calls.',
-    '6. For every quote that shows something to develop, add "better": what the adviser could say instead at that same moment on the call, written as the actual words they would say to the student. Natural, warm and specific to that call, one or two sentences. If the quote shows something done well, leave better empty.',
+    '6. For every quote that shows something to develop, add "better": what the adviser could say instead at that same moment on the call, written as the actual words they would say to the student. Natural, warm and specific to that call, one or two sentences. If the quote shows something done well, leave better empty. Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -1165,7 +1165,7 @@ async function buildBetter(s) {
   try {
     const r = await ai([
       'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, coach Student Success Adviser ' + first(s.adviser) + ' on their phone calls with online postgraduate students.',
-      'For each numbered quote below, write what ' + first(s.adviser) + ' could say instead at that same moment on the call: the actual words they would say to the student. Natural, warm and specific to that moment, one or two sentences, and it should fix the point to develop. If the quote shows something done well, return an empty string for it.',
+      'For each numbered quote below, write what ' + first(s.adviser) + ' could say instead at that same moment on the call: the actual words they would say to the student. Natural, warm and specific to that moment, one or two sentences, and it should fix the point to develop. If the quote shows something done well, return an empty string for it. Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
       '',
       ts.map((t, i) => (i + 1) + '. ' + t.label + '. Point to develop: ' + (t.develop || 'none') + '. Quote: "' + t.x.quote + '"').join(String.fromCharCode(10)),
       '',

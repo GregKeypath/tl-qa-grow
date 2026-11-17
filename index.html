@@ -304,8 +304,8 @@ const STAGES = [
 ];
 const STEP_LIST = [
   { key: 'prep', label: 'Prepare', sub: 'QA calls and your notes' },
-  { key: 'plan', label: 'QA insights', sub: 'Groups and coaching items' },
   { key: 'pre', label: 'Pre-session email', sub: 'Calls to listen to' },
+  { key: 'plan', label: 'QA insights', sub: 'Focus and coaching questions' },
   { key: 'notes', label: 'Session notes', sub: 'What was said and agreed' },
   { key: 'outcome', label: 'Goal and email', sub: 'HiBob goal and recap' }
 ];
@@ -721,7 +721,7 @@ function prePrompt(s, calls) {
   return [
     'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, choose calls for Student Success Adviser ' + first(s.adviser) + ' to listen back to before their monthly QA coaching session. The adviser is not told the focus: they listen and come to the session with their own view, so the calls must make the focus easy to notice.',
     '',
-    'COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not set'),
+    'COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not decided yet: work it out from the calls below, the single most important habit or gap across them, compliance first if any call failed it'),
     'WHAT TO COACH: ' + (((pl.items || [])[0] || {}).detail || ''),
     '',
     'CALLS AVAILABLE (id | date | overall | result | coaching focus | weakest feedback)',
@@ -763,7 +763,7 @@ async function buildPre(s) {
   busy('Choosing the calls…');
   try {
     let pick = [];
-    if (calls.length > 3 && s.plan) {
+    if (calls.length > 3) {
       const r = await ai(prePrompt(s, calls));
       const ok = new Set(calls.map(c => c.interactionId));
       pick = (Array.isArray(r.calls) ? r.calls : []).filter(x => x && ok.has(x.id)).slice(0, 3).map(x => ({ id: x.id, why: toText(x.why) }));
@@ -805,7 +805,7 @@ async function copyRich(html, plain) {
 function vPre(s) {
   const pe = s.preEmail;
   const avail = (s.callIds || []).map(callById).filter(c => c && c.transcriptUrl).sort((a, b) => String(a.interactionDate).localeCompare(String(b.interactionDate)));
-  if (!pe) return '<div class="card empty">Write the email that goes to ' + esc(first(s.adviser)) + ' before the session, with links to the 2 or 3 calls that best show the coaching focus. The email uses your standard wording and does not name the focus.' + (s.plan ? '' : '<br>Building the QA insights first gives a better choice of calls.') + '<div class="actions" style="justify-content:center"><button class="btn green" data-act="pre"' + (avail.length ? '' : ' disabled') + '>Write pre-session email</button></div>' + (avail.length ? '' : '<p style="font-size:13px">None of the ticked calls have a Genesys link.</p>') + '</div>';
+  if (!pe) return '<div class="card empty">Write the email that goes to ' + esc(first(s.adviser)) + ' before the session, with links to the 2 or 3 calls that best show the coaching focus. The email uses your standard wording and does not name the focus.' + (s.plan ? '' : '') + '<div class="actions" style="justify-content:center"><button class="btn green" data-act="pre"' + (avail.length ? '' : ' disabled') + '>Write pre-session email</button></div>' + (avail.length ? '' : '<p style="font-size:13px">None of the ticked calls have a Genesys link.</p>') + '</div>';
   const chosen = new Map((pe.calls || []).map(x => [x.id, x.why]));
   const parts = preParts(s);
   let h = '<div class="split"><div class="card"><h2>Calls to listen to</h2><p class="sub">Tick 2 or 3. They appear in the email as Call 1, Call 2 and so on, in date order.</p>';
@@ -815,7 +815,7 @@ function vPre(s) {
   h += '<label class="f">Email</label><textarea class="in" rows="16" data-bind="preEmail.body" data-rerender>' + esc(pe.body) + '</textarea>';
   h += '<label class="f">How it will look</label><div class="preview" id="prePreview">' + parts.html + '</div>';
   h += '<div class="actions"><button class="btn blue sm" data-act="copy-pre">Copy email with links</button><button class="ghost" data-act="mailto-pre">Open in Outlook</button><button class="ghost" data-act="pre">Choose calls again and reset the email</button></div></div></div>';
-  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Next: session notes</button></div>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/plan">Next: QA insights</button></div>';
   return h;
 }
 async function buildOutcome(s) {
@@ -1023,7 +1023,7 @@ function vGuide() {
     ['will', 'W', 'Will', 'Commit to specific actions, a measure and a date. This becomes the HiBob goal.', ['What will you do, starting with your next call?', 'How will we both know it is working?']]
   ];
   let h = '<div class="ph"><div><h1>GROW guide</h1><p>How a session runs in this tool, and what each stage is for.</p></div></div>';
-  h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, pick the month of QA calls to cover and add your own observations.</li><li><b>QA insights.</b> The AI reads all the calls together and picks the one coaching focus with the most impact, with an insight for each QA group behind it and coaching questions you can ask. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
+  h += '<div class="card" style="margin-bottom:14px"><h2>The flow</h2><ol class="qlist" style="font-size:14px"><li><b>Prepare.</b> Pick the adviser, pick the month of QA calls to cover and add your own observations.</li><li><b>Pre-session email.</b> The tool picks 2 or 3 calls that show the coaching focus and puts the links in your standard email, without naming the focus.</li><li><b>QA insights.</b> The AI reads all the calls together and picks the one coaching focus with the most impact, with an insight for each QA group behind it and coaching questions you can ask. Edit anything you like.</li><li><b>Session notes.</b> During the conversation, note what the adviser says under each stage and what they commit to.</li><li><b>Goal and email.</b> The AI turns your notes into a SMART goal to paste into HiBob and a recap email for the adviser.</li></ol></div>';
   h += '<div class="guide">' + g.map(x => '<div class="card stage ' + x[0] + '"><div class="stage-h"><span class="L">' + x[1] + '</span><h3>' + x[2] + '</h3></div><p style="margin:0 0 6px">' + x[3] + '</p><ul class="qlist">' + x[4].map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>').join('') + '</div>';
   h += '<div class="section-t"><h2>If you get stuck</h2><span class="chip">Questions that work with any adviser</span></div>';
   h += '<p style="margin:-4px 0 14px;color:var(--muted)">Ask one, then pause. Silence is fine: give them a few seconds before you fill it.</p>';
@@ -1129,7 +1129,7 @@ function vPrep(s) {
   h += '<label class="f">' + (notesOnly ? 'Your QA findings' : 'Your observations') + '</label><textarea class="in" rows="' + (notesOnly ? 7 : 4) + '" data-bind="prep.observations" placeholder="' + (notesOnly ? 'What you heard across the calls: what is working, what to develop, and which call it happened on. Quotes help if you have them.' : 'What have you noticed in their calls, behaviour or results? Patterns, strengths, moments that stood out.') + '">' + esc(p.observations || '') + '</textarea>';
   h += '<label class="f">What you want from this session</label><textarea class="in" rows="2" data-bind="prep.goal" placeholder="For example: leave with one clear habit to confirm understanding before giving advice.">' + esc(p.goal || '') + '</textarea>';
   h += '<label class="f">Questions or anything else to cover</label><textarea class="in" rows="3" data-bind="prep.questions" placeholder="Questions you want to ask, other topics, or wins to recognise.">' + esc(p.questions || '') + '</textarea>';
-  h += '<div class="actions"><button class="btn green" data-act="build">' + (s.plan ? 'Rebuild QA insights' : 'Build QA insights') + '</button>' + (s.plan ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/plan">View current insights</button>' : '') + '</div></div></div></div>';
+  h += '<div class="actions"><button class="btn green" data-act="go" data-href="#/session/' + s.id + '/pre">Next: pre-session email</button><button class="ghost" data-act="build">' + (s.plan ? 'Rebuild QA insights' : 'Build QA insights now') + '</button>' + (s.plan ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/plan">View current insights</button>' : '') + '</div></div></div></div>';
   return h;
 }
 function monthsOf(calls) { return [...new Set(calls.map(c => String(c.interactionDate).slice(0, 7)))].sort().reverse(); }
@@ -1200,7 +1200,7 @@ function vPlan(s) {
     const p = st.sec[g.key], r = g.key === 'compliance' ? (st.fails ? { label: st.fails + ' fail' + (st.fails > 1 ? 's' : ''), cls: 'r-dnm' } : { label: 'No fails', cls: 'r-exc' }) : ratingPct(p);
     return '<div class="card grp ' + r.cls + '"><div class="stage-h"><h3>' + g.label + '</h3><span class="pill" style="margin-left:auto">' + (isNum(p) && g.key !== 'compliance' ? (p / 20).toFixed(1) + '/5 ' : '') + r.label + '</span></div><label class="f">What is working</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.working">' + esc(x.working) + '</textarea><label class="f">To develop</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.develop">' + esc(x.develop) + '</textarea>' + (x.quote ? quoteBlock(s, x, 'plan.groups.' + g.key) : '') + '</div>';
   }).join('') + '</div>';
-  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/pre">Next: pre-session email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Go to session notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Next: session notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/pre">Back to pre-session email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
   return h;
 }
 function vNotes(s) {

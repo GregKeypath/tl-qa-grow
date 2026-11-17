@@ -626,6 +626,7 @@ function outcomePrompt(s) {
     'Adviser commitments: ' + (n.commitments || 'none'),
     'Support Greg will provide: ' + (n.support || 'none'),
     'Follow-up date: ' + fmtDate(due) + ' (' + due + ')',
+    'SUMMARY OF WHAT WAS DISCUSSED (agreed by Greg, use these lines for "What we talked about" in the email): ' + (n.summary || 'none, write it from the session notes'),
     '',
     'EARLIER COACHING',
     prevText(s),
@@ -817,6 +818,47 @@ function vPre(s) {
   h += '<div class="actions"><button class="btn blue sm" data-act="copy-pre">Copy email with links</button><button class="ghost" data-act="mailto-pre">Open in Outlook</button><button class="ghost" data-act="pre">Choose calls again and reset the email</button></div></div></div>';
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/plan">Next: QA insights</button></div>';
   return h;
+}
+const TIDY_KEYS = ['goal', 'reality', 'options', 'will', 'commitments', 'support'];
+async function tidyNotes(s) {
+  const n = s.notes || {};
+  if (!TIDY_KEYS.some(k => (n[k] || '').trim())) { toast('Add some session notes first.', true); return; }
+  busy('Tidying notes and writing the summary…');
+  try {
+    const src = {}; TIDY_KEYS.forEach(k => { src[k] = n[k] || ''; });
+    const r = await ai([
+      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, tidy the notes he typed during a GROW coaching session with Student Success Adviser ' + first(s.adviser) + '. The coaching focus was: ' + ((s.plan || {}).focus || 'not recorded') + '.',
+      'Notes were typed quickly during the conversation, so expect shorthand, typos and half sentences.',
+      '',
+      'TASK 1: tidy each field. Fix spelling and grammar, expand shorthand, and turn fragments into clear, short sentences or dot points starting with "• ". Keep every point and keep the meaning exactly. Do not add anything that was not in the notes, do not soften or judge, and keep the adviser\'s own words where they are quoted. Leave an empty field empty.',
+      'TASK 2: write a summary of what was discussed, as 3 to 5 lines starting with "• ", written to ' + first(s.adviser) + ' in the second person (for example: • We looked at how you open outbound calls). Only include what is in the notes.',
+      '',
+      'NOTES',
+      JSON.stringify(src),
+      '',
+      'RULES',
+      RULES.join(String.fromCharCode(10)),
+      '',
+      'Return JSON only: {"goal":"","reality":"","options":"","will":"","commitments":"","support":"","summary":""}'
+    ].join(String.fromCharCode(10)));
+    if (!n.raw) n.raw = src;
+    TIDY_KEYS.forEach(k => { if ((n[k] || '').trim() && typeof r[k] === 'string' && r[k].trim()) n[k] = r[k].replace(/\\n/g, '\n'); });
+    n.summary = toText(r.summary).replace(/\\n/g, '\n');
+    s.notes = n;
+    await saveNow(s);
+    toast('Notes tidied and summary added');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
+}
+function untidyNotes(s) {
+  const n = s.notes || {};
+  if (!n.raw) return;
+  if (!confirm('Put your original notes back? The tidied wording will be replaced.')) return;
+  TIDY_KEYS.forEach(k => { n[k] = n.raw[k] || ''; });
+  delete n.raw;
+  saveNow(s);
+  render();
+  toast('Original notes restored');
 }
 async function buildOutcome(s) {
   const n = s.notes || {};
@@ -1219,7 +1261,11 @@ function vNotes(s) {
   }).join('');
   h += '<div class="card"><h2>What was agreed</h2><div class="grid g2"><div><label class="f">' + esc(first(s.adviser)) + '\'s commitments</label><textarea class="in" rows="4" data-bind="notes.commitments" placeholder="What they said they will do, in their words">' + esc(n.commitments || '') + '</textarea></div><div><label class="f">Support you will provide</label><textarea class="in" rows="4" data-bind="notes.support" placeholder="For example: listen to two calls together next week">' + esc(n.support || '') + '</textarea></div></div>';
   h += '<label class="f">Follow-up date</label><input class="in" type="date" data-bind="notes.followUp" value="' + esc(n.followUp || '') + '" style="width:auto">';
-  h += '<div class="actions"><button class="btn green" data-act="outcome">' + (s.outcome ? 'Rewrite goal and email' : 'Create HiBob goal and email') + '</button>' + (s.outcome ? '<button class="ghost" data-act="go" data-href="#/session/' + s.id + '/outcome">View current goal and email</button>' : '') + '</div></div></div>';
+  h += '</div>';
+  h += '<div class="card" style="border-left:4px solid var(--o)"><div class="row"><h2 style="margin:0">Summary of what was discussed</h2><span style="flex:1"></span>' + (n.raw ? '<button class="link" data-act="untidy">Undo tidy</button>' : '') + '<button class="btn blue sm" data-act="tidy">' + (n.summary ? 'Tidy and summarise again' : 'Tidy notes and summarise') + '</button></div>';
+  h += '<p class="sub" style="margin:6px 0 10px">Cleans up the notes above without changing what was said, then writes a summary. The summary is used in the recap email.</p>';
+  h += n.summary ? '<textarea class="in" rows="5" data-bind="notes.summary">' + esc(n.summary) + '</textarea>' : '<p style="margin:0;color:var(--muted)">No summary yet.</p>';
+  h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/outcome">Next: goal and email</button></div></div></div>';
   return h;
 }
 function vOutcome(s) {
@@ -1289,6 +1335,8 @@ document.addEventListener('click', e => {
   if (act === 'build') { buildPlan(s); return; }
   if (act === 'questions') { buildQuestions(s); return; }
   if (act === 'better') { buildBetter(s); return; }
+  if (act === 'tidy') { tidyNotes(s); return; }
+  if (act === 'untidy') { untidyNotes(s); return; }
   if (act === 'pre') { buildPre(s); return; }
   if (act === 'copy-pre') { const p = preParts(s); copyRich(p.html, p.plain); return; }
   if (act === 'mailto-pre') { const p = preParts(s); location.href = 'mailto:?subject=' + encodeURIComponent(s.preEmail.subject || '') + '&body=' + encodeURIComponent(p.plain); return; }

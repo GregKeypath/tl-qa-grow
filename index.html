@@ -176,6 +176,9 @@ textarea.in{resize:vertical;min-height:70px;line-height:1.5}
 .better{margin-top:8px;background:var(--w-bg);border-radius:9px;padding:9px 12px}
 .better .evh{color:var(--w)}
 .better textarea.in{background:#fff;min-height:0}
+.krbox{border:1px solid var(--line);border-radius:10px;padding:10px 10px 2px;margin-bottom:10px;background:#fff}
+.krbox .kr > div{min-width:0}
+.krl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px}
 .qform{margin-bottom:14px}
 .sp5{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .sp5 label,.pickopt{cursor:pointer}
@@ -559,7 +562,7 @@ function prevText(s) {
   const p = prevSession(s);
   if (!p) return 'No earlier coaching session recorded.';
   const h = (p.outcome && p.outcome.hibob) || {};
-  return 'Previous session ' + smLabel(p) + '. Goal: ' + (h.title || 'n/a') + '. Key results: ' + (h.keyResults || []).join(' | ') + '. Adviser commitments: ' + ((p.notes && p.notes.commitments) || 'n/a') + '.';
+  return 'Previous session ' + smLabel(p) + '. Goal: ' + (h.title || 'n/a') + '. Key results: ' + (h.keyResults || []).map(krNorm).map(k => k.goal + (k.measure ? ' (measured by ' + k.measure + ')' : '')).join(' | ') + '. Adviser commitments: ' + ((p.notes && p.notes.commitments) || 'n/a') + '.';
 }
 const RULES = [
   'Write in Australian English (organise, behaviour, enrol, enrolment, program).',
@@ -632,14 +635,14 @@ function outcomePrompt(s) {
     'EARLIER COACHING',
     prevText(s),
     '',
-    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description or key results, because future QA results are not known. Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Every adviser commitment and every agreed action must appear in the key results, worded as a clear, observable behaviour (for example, a commitment to apply the GROW model in calls becomes a key result about using the GROW model to structure every call). Do not add commitments that were not discussed. Check spelling carefully.',
+    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Each key result has two parts. goal: the behaviour, specific and achievable. measuredBy: how Greg and the adviser will both see it is happening, with a number and a timeframe, using things they can actually check (for example: Greg listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). ' + MEASURE_RULE + ' Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Every adviser commitment and every agreed action must appear in the key results, worded as a clear, observable behaviour (for example, a commitment to apply the GROW model in calls becomes a key result about using the GROW model to structure every call). Do not add commitments that were not discussed. Check spelling carefully.',
     'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with the summary lines starting with "• ". Then "Your key take-away" with the agreed take-away in one sentence. Then "Your actions" with the agreed actions as lines starting with "• ", and one sentence saying these are also set as your goal in Bob. Then what Greg will do to support. Then say we will check in on how it is going at the next monthly QA session. Do not give a date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Never mention QA scores, ratings or percentages.',
     '',
     'RULES',
     RULES.join('\n'),
     '',
     'Return JSON only, in exactly this shape:',
-    '{"hibob":{"title":"","description":"","keyResults":["",""],"dueDate":"YYYY-MM-DD"},"email":{"subject":"","body":""}}'
+    '{"hibob":{"title":"","description":"","keyResults":[{"goal":"","measuredBy":""},{"goal":"","measuredBy":""}],"dueDate":"YYYY-MM-DD"},"email":{"subject":"","body":""}}'
   ].join('\n');
 }
 const GROUPS = SECTIONS.map(s => ({ key: s.key, label: s.label })).concat([{ key: 'compliance', label: 'Compliance' }]);
@@ -820,7 +823,38 @@ function vPre(s) {
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/plan">Next: QA insights</button></div>';
   return h;
 }
-const TIDY_KEYS = ['goal', 'reality', 'options', 'will', 'commitments', 'support'];
+const MEASURE_RULE = 'Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description, goals or measures, because future QA results are not known.';
+function krNorm(k) {
+  if (k && typeof k === 'object') return { goal: toText(k.goal || k.text), measure: toText(k.measure || k.measuredBy) };
+  return { goal: toText(k), measure: '' };
+}
+async function buildMeasures(s) {
+  const hb = s.outcome.hibob;
+  hb.keyResults = (hb.keyResults || []).map(krNorm);
+  const todo = hb.keyResults.map((k, i) => ({ k, i })).filter(x => x.k.goal && !x.k.measure);
+  if (!todo.length) return;
+  busy('Writing how each key result will be measured…');
+  try {
+    const r = await ai([
+      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a SMART goal in Bob (HiBob) for Student Success Adviser ' + first(s.adviser) + '.',
+      'Goal: ' + (hb.title || ''),
+      '',
+      'For each key result below, write "measured by": how Greg and ' + first(s.adviser) + ' will both see it is happening, with a number and a timeframe, using things they can actually check (for example: Greg listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). One sentence each.',
+      MEASURE_RULE,
+      '',
+      todo.map((x, n) => (n + 1) + '. ' + x.k.goal).join(String.fromCharCode(10)),
+      '',
+      'RULES', RULES.join(String.fromCharCode(10)), '',
+      'Return JSON only: {"measures":["",""]} with one string per key result, in order.'
+    ].join(String.fromCharCode(10)));
+    const arr = Array.isArray(r.measures) ? r.measures : [];
+    todo.forEach((x, n) => { hb.keyResults[x.i].measure = toText(arr[n]); });
+    await saveNow(s);
+    toast('Measures added');
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(''); render(); }
+}
+const TIDY_KEYS =['goal', 'reality', 'options', 'will', 'commitments', 'support'];
 async function tidyNotes(s) {
   const n = s.notes || {};
   if (!TIDY_KEYS.some(k => (n[k] || '').trim())) { toast('Add some session notes first.', true); return; }
@@ -873,7 +907,7 @@ async function buildOutcome(s) {
     const r = await ai(outcomePrompt(s));
     const h = r.hibob || {}, em = r.email || {};
     s.outcome = {
-      hibob: { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(toText).filter(Boolean), dueDate: toText(h.dueDate) || n.followUp || '' },
+      hibob: { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(krNorm).filter(k => k.goal), dueDate: toText(h.dueDate) || n.followUp || '' },
       email: { subject: toText(em.subject), body: toText(em.body).replace(/\\n/g, '\n') }
     };
     s.outcomeAt = Date.now();
@@ -1280,7 +1314,10 @@ function vOutcome(s) {
   let h = '<div class="split"><div class="card stage options"><div class="stage-h"><span class="L">★</span><div><h3>HiBob goal</h3><span>Copy each field into the matching box in HiBob</span></div></div>';
   h += '<label class="f">Goal title</label><div class="copyrow"><input class="in" data-bind="outcome.hibob.title" value="' + esc(hb.title) + '" style="font-weight:600">' + cp('outcome.hibob.title') + '</div>';
   h += '<label class="f">Description</label><div class="copyrow"><textarea class="in" rows="5" data-bind="outcome.hibob.description">' + esc(hb.description) + '</textarea>' + cp('outcome.hibob.description') + '</div>';
-  h += '<label class="f">Key results</label>' + (hb.keyResults || []).map((k, i) => '<div class="kr"><b>' + (i + 1) + '</b><textarea class="in" rows="2" data-bind="outcome.hibob.keyResults.' + i + '">' + esc(k) + '</textarea>' + cp('outcome.hibob.keyResults.' + i) + '</div>').join('');
+  hb.keyResults = (hb.keyResults || []).map(krNorm);
+  const needMeasure = hb.keyResults.some(k => k.goal && !k.measure);
+  h += '<div class="row" style="margin-top:12px"><label class="f" style="margin:0">Key results</label><span style="flex:1"></span>' + (needMeasure ? '<button class="btn blue sm" data-act="measures">Suggest measures</button>' : '') + '</div>';
+  h += hb.keyResults.map((k, i) => '<div class="krbox"><div class="kr"><b>' + (i + 1) + '</b><div><div class="krl">Goal</div><textarea class="in" rows="2" data-bind="outcome.hibob.keyResults.' + i + '.goal">' + esc(k.goal) + '</textarea></div>' + cp('outcome.hibob.keyResults.' + i + '.goal') + '</div><div class="kr"><b></b><div><div class="krl">Measured by</div><textarea class="in" rows="2" data-bind="outcome.hibob.keyResults.' + i + '.measure" placeholder="How you will both see it is happening">' + esc(k.measure) + '</textarea></div>' + cp('outcome.hibob.keyResults.' + i + '.measure') + '</div></div>').join('');
   h += '<button class="link" data-act="add-kr" style="font-size:13px">+ Add key result</button>';
   h += '<label class="f">Due date</label><div class="row"><input class="in" type="date" data-bind="outcome.hibob.dueDate" value="' + esc(hb.dueDate || '') + '" style="width:auto"><button class="cbtn" data-act="copy-due">Copy</button></div>';
   h += '<div class="actions"><button class="btn blue sm" data-act="copy-goal">Copy whole goal</button></div></div>';
@@ -1304,7 +1341,7 @@ function newSession(name) {
   location.hash = '#/session/' + s.id + '/prep';
 }
 function goalText(hb) {
-  return [hb.title || '', '', hb.description || '', '', 'Key results:', ...(hb.keyResults || []).map((k, i) => (i + 1) + '. ' + k), '', 'Due: ' + fmtDate(hb.dueDate)].join('\n');
+  return [hb.title || '', '', hb.description || '', '', 'Key results:', ...(hb.keyResults || []).map(krNorm).map((k, i) => (i + 1) + '. ' + k.goal + (k.measure ? String.fromCharCode(10) + '   Measured by: ' + k.measure : '')), '', 'Due: ' + fmtDate(hb.dueDate)].join('\n');
 }
 async function copy(t) {
   try { await navigator.clipboard.writeText(t); toast('Copied'); }
@@ -1350,7 +1387,8 @@ document.addEventListener('click', e => {
   if (act === 'copy-goal') { copy(goalText(s.outcome.hibob)); return; }
   if (act === 'add-item') { s.plan.items = (s.plan.items || []).concat([{ title: 'New coaching item', detail: '', calls: null, quote: '', date: '' }]); saveSoon(s); render(); return; }
   if (act === 'del-item') { s.plan.items.splice(+t.dataset.i, 1); saveSoon(s); render(); return; }
-  if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).concat(['']); saveSoon(s); render(); return; }
+  if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).map(krNorm).concat([{ goal: '', measure: '' }]); saveSoon(s); render(); return; }
+  if (act === 'measures') { buildMeasures(s); return; }
   if (act === 'mailto') { const em = s.outcome.email; location.href = 'mailto:?subject=' + encodeURIComponent(em.subject || '') + '&body=' + encodeURIComponent(em.body || ''); return; }
   if (act === 'complete') { s.complete = !s.complete; s.completedAt = s.complete ? Date.now() : null; saveNow(s); render(); toast(s.complete ? 'Session marked complete' : 'Session reopened'); return; }
   if (act === 'del') {

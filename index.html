@@ -899,21 +899,30 @@ function untidyNotes(s) {
   render();
   toast('Original notes restored');
 }
-async function buildOutcome(s) {
+async function buildOutcome(s, part) {
   const n = s.notes || {};
   if (!['goal', 'reality', 'options', 'will', 'commitments'].some(k => (n[k] || '').trim())) { toast('Add some session notes first.', true); return; }
-  busy('Writing the HiBob goal and recap email…');
+  part = s.outcome ? (part || 'both') : 'both';
+  if (part === 'goal' && !confirm('Rewrite the HiBob goal from your notes? Any wording you have edited in the goal and key results will be replaced. The email stays as it is.')) return;
+  busy(part === 'email' ? 'Rewriting the recap email…' : part === 'goal' ? 'Rewriting the HiBob goal…' : 'Writing the HiBob goal and recap email…');
   try {
-    const r = await ai(outcomePrompt(s));
+    let prompt = outcomePrompt(s);
+    if (part === 'email') {
+      const hb = s.outcome.hibob || {};
+      prompt += String.fromCharCode(10) + String.fromCharCode(10) + 'THE HIBOB GOAL IS ALREADY AGREED. Do not change it. Copy it back exactly in hibob, and write the email so it matches it. Agreed goal: ' + JSON.stringify({ title: hb.title, keyResults: (hb.keyResults || []).map(krNorm).map(k => k.goal) });
+    }
+    const r = await ai(prompt);
     const h = r.hibob || {}, em = r.email || {};
+    const newGoal = { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(krNorm).filter(k => k.goal), dueDate: toText(h.dueDate) || n.followUp || '' };
+    const newEmail = { subject: toText(em.subject), body: toText(em.body).replace(/\\n/g, '\n') };
     s.outcome = {
-      hibob: { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(krNorm).filter(k => k.goal), dueDate: toText(h.dueDate) || n.followUp || '' },
-      email: { subject: toText(em.subject), body: toText(em.body).replace(/\\n/g, '\n') }
+      hibob: part === 'email' ? s.outcome.hibob : newGoal,
+      email: part === 'goal' ? s.outcome.email : newEmail
     };
     s.outcomeAt = Date.now();
     await saveNow(s);
     location.hash = '#/session/' + s.id + '/outcome';
-    toast('Goal and email ready');
+    toast(part === 'email' ? 'Email rewritten, goal unchanged' : part === 'goal' ? 'Goal rewritten, email unchanged' : 'Goal and email ready');
   } catch (e) { toast(e.message || String(e), true); }
   finally { busy(''); render(); }
 }
@@ -1325,7 +1334,7 @@ function vOutcome(s) {
   h += '<label class="f">Subject</label><div class="copyrow"><input class="in" data-bind="outcome.email.subject" value="' + esc(em.subject) + '">' + cp('outcome.email.subject') + '</div>';
   h += '<label class="f">Email</label><textarea class="in" rows="20" data-bind="outcome.email.body">' + esc(em.body) + '</textarea>';
   h += '<div class="actions"><button class="btn blue sm" data-act="copy" data-path="outcome.email.body">Copy email</button><button class="ghost" data-act="mailto">Open in Outlook</button></div></div></div>';
-  h += '<div class="actions"><button class="btn ' + (s.complete ? '' : 'green') + '" data-act="complete">' + (s.complete ? 'Reopen session' : 'Mark session complete') + '</button><button class="ghost" data-act="outcome">Rewrite from notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Back to session notes</button></div>';
+  h += '<div class="actions"><button class="btn ' + (s.complete ? '' : 'green') + '" data-act="complete">' + (s.complete ? 'Reopen session' : 'Mark session complete') + '</button><button class="ghost" data-act="outcome" data-part="goal">Rewrite goal</button><button class="ghost" data-act="outcome" data-part="email">Rewrite email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Back to session notes</button></div>';
   return h;
 }
 
@@ -1381,7 +1390,7 @@ document.addEventListener('click', e => {
   if (act === 'pre') { buildPre(s); return; }
   if (act === 'copy-pre') { const p = preParts(s); copyRich(p.html, p.plain); return; }
   if (act === 'mailto-pre') { const p = preParts(s); location.href = 'mailto:?subject=' + encodeURIComponent(s.preEmail.subject || '') + '&body=' + encodeURIComponent(p.plain); return; }
-  if (act === 'outcome') { buildOutcome(s); return; }
+  if (act === 'outcome') { buildOutcome(s, t.dataset.part); return; }
   if (act === 'copy') { copy(String(getPath(s, t.dataset.path) || '')); return; }
   if (act === 'copy-due') { copy(fmtDate(getPath(s, 'outcome.hibob.dueDate'))); return; }
   if (act === 'copy-goal') { copy(goalText(s.outcome.hibob)); return; }

@@ -830,7 +830,19 @@ function preParts(s) {
   }).join('');
   return { plain, html: '<div style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt">' + html + '</div>' };
 }
-const RECAP_HEADS = ['what we talked about', 'your key take-away', 'your key takeaway', 'your actions'];
+function b64utf8(str) { return btoa(unescape(encodeURIComponent(str))); }
+function downloadEml(subject, html, name) {
+  const CRLF = String.fromCharCode(13, 10);
+  const body = (b64utf8('<html><head><meta charset="utf-8"></head><body>' + html + '</body></html>').match(/.{1,76}/g) || []).join(CRLF);
+  const eml = ['To: ', 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'X-Unsent: 1', 'MIME-Version: 1.0', 'Content-Type: text/html; charset="utf-8"', 'Content-Transfer-Encoding: base64', '', body, ''].join(CRLF);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([eml], { type: 'message/rfc822' }));
+  a.download = name.replace(/[^A-Za-z0-9 ._-]/g, '') + '.eml';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('Email downloaded. Click the download to open it in Outlook.');
+}
+const RECAP_HEADS =['what we talked about', 'your key take-away', 'your key takeaway', 'your actions'];
 function emailHtml(body) {
   const NL = String.fromCharCode(10);
   const P = 'margin:0 0 12px', UL = 'margin:0 0 12px;padding-left:22px', LI = 'margin:0 0 3px';
@@ -1383,7 +1395,7 @@ function vOutcome(s) {
   h += '<div class="card stage goal"><div class="stage-h"><span class="L">✉</span><div><h3>Recap email to ' + esc(first(s.adviser)) + '</h3><span>Edit, then copy into Outlook</span></div></div>';
   h += '<label class="f">Subject</label><div class="copyrow"><input class="in" data-bind="outcome.email.subject" value="' + esc(em.subject) + '">' + cp('outcome.email.subject') + '</div>';
   h += '<label class="f">Email</label><textarea class="in" rows="20" data-bind="outcome.email.body">' + esc(em.body) + '</textarea>';
-  h += '<div class="actions"><button class="btn blue sm" data-act="copy-recap">Copy email</button><button class="ghost" data-act="mailto">Open in Outlook</button></div><p class="tip" style="margin-top:6px">Open in Outlook fills in the subject and copies the email. Click in the body and press Ctrl + V.</p></div></div>';
+  h += '<div class="actions"><button class="btn blue sm" data-act="copy-recap">Copy email</button><button class="ghost" data-act="mailto">Open in Outlook</button></div><p class="tip" style="margin-top:6px">Open in Outlook downloads the email as a draft. Click the download to open it in Outlook, add the address and send.</p></div></div>';
   h += '<div class="actions"><button class="btn ' + (s.complete ? '' : 'green') + '" data-act="complete">' + (s.complete ? 'Reopen session' : 'Mark session complete') + '</button><button class="ghost" data-act="outcome" data-part="goal">Rewrite goal</button><button class="ghost" data-act="outcome" data-part="email">Rewrite email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/notes">Back to session notes</button></div>';
   return h;
 }
@@ -1439,7 +1451,7 @@ document.addEventListener('click', e => {
   if (act === 'untidy') { untidyNotes(s); return; }
   if (act === 'pre') { buildPre(s); return; }
   if (act === 'copy-pre') { const p = preParts(s); copyRich(p.html, p.plain); return; }
-  if (act === 'mailto-pre') { const p = preParts(s); location.href = 'mailto:?subject=' + encodeURIComponent(s.preEmail.subject || '') + '&body=' + encodeURIComponent(p.plain); return; }
+  if (act === 'mailto-pre') { downloadEml(s.preEmail.subject || '', preParts(s).html, 'Pre-session email - ' + first(s.adviser)); return; }
   if (act === 'outcome') { buildOutcome(s, t.dataset.part); return; }
   if (act === 'copy') { copy(String(getPath(s, t.dataset.path) || '')); return; }
   if (act === 'copy-due') { copy(fmtDate(getPath(s, 'outcome.hibob.dueDate'))); return; }
@@ -1449,7 +1461,7 @@ document.addEventListener('click', e => {
   if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).map(krNorm).concat([{ goal: '', measure: '' }]); saveSoon(s, 'outcome.hibob.keyResults'); render(); return; }
   if (act === 'measures') { buildMeasures(s); return; }
   if (act === 'copy-recap') { const b = s.outcome.email.body || ''; copyRich(emailHtml(b), b); return; }
-  if (act === 'mailto') { const em = s.outcome.email; copyRich(emailHtml(em.body || ''), em.body || '').then(() => { location.href = 'mailto:?subject=' + encodeURIComponent(em.subject || ''); toast('Email copied. Click in the Outlook body and press Ctrl + V.'); }); return; }
+  if (act === 'mailto') { const em = s.outcome.email; downloadEml(em.subject || '', emailHtml(em.body || ''), 'Recap email - ' + first(s.adviser)); return; }
   if (act === 'complete') { s.complete = !s.complete; s.completedAt = s.complete ? Date.now() : null; saveNow(s); render(); toast(s.complete ? 'Session marked complete' : 'Session reopened'); return; }
   if (act === 'del') {
     if (!confirm('Delete this coaching session for ' + s.adviser + '? This cannot be undone.')) return;

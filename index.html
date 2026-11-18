@@ -633,7 +633,7 @@ function outcomePrompt(s) {
     'QA PICTURE',
     (s.qaBrief || 'None').split('\n').slice(0, 3).join('\n'),
     '',
-    'COACHING FOCUS: ' + (pl.focus || 'not set'),
+    'COACHING FOCUS PLANNED BEFORE THE SESSION (background only; if the session notes went in a different direction, the goal and email must follow the notes, not this): ' + (pl.focus || 'not set'),
     'QA SUMMARY: ' + (pl.summary || ''),
     'STRENGTHS SEEN ON THEIR CALLS: ' + ((pl.strengths || []).join('; ') || 'see the QA summary and notes'),
     'WHAT TO COACH: ' + (((pl.items || [])[0] || {}).detail || 'not set'),
@@ -911,12 +911,12 @@ async function tidyNotes(s) {
   try {
     const src = {}; TIDY_KEYS.forEach(k => { src[k] = n[k] || ''; });
     const r = await ai([
-      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, tidy the notes he typed during a GROW coaching session with Student Success Adviser ' + first(s.adviser) + '. The coaching focus was: ' + ((s.plan || {}).focus || 'not recorded') + '.',
+      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, tidy the notes he typed during a GROW coaching session with Student Success Adviser ' + first(s.adviser) + '. The coaching focus planned before the session was: ' + ((s.plan || {}).focus || 'not recorded') + '. Conversations often move to what the adviser brings, so the notes are what actually happened and always win over the planned focus.',
       'Notes were typed quickly during the conversation, so expect shorthand, typos and half sentences.',
       '',
       'TASK 1: tidy each field. Fix spelling and grammar, expand shorthand, and turn fragments into clear, short sentences or dot points starting with "• ". Keep every point and keep the meaning exactly. Do not add anything that was not in the notes, do not soften or judge, and keep the adviser\'s own words where they are quoted. Leave an empty field empty.',
       'TASK 2: write a summary of what was discussed, as 3 to 5 lines starting with "• ", written to ' + first(s.adviser) + ' in the second person (for example: • We looked at how you open outbound calls). Only include what is in the notes.',
-      'TASK 3: write the key take-away: the one thing ' + first(s.adviser) + ' should remember from this session, in one sentence, in the second person, tied to the coaching focus.',
+      'TASK 3: write the key take-away: the one thing ' + first(s.adviser) + ' should remember from this session, in one or two short sentences, in the second person, taken from what was actually discussed in the notes (mainly the Will notes and commitments). Do not bring in the planned focus unless the notes discuss it.',
       'TASK 4: write the actions: 2 or 3 lines starting with "• ", each a specific thing ' + first(s.adviser) + ' will do on their calls and how often, taken from the Will notes and commitments. Each line must be a different action; put any start date or timing inside the action rather than on its own line. Use 1 line if only one action was agreed. Only include what was agreed.',
       '',
       'NOTES',

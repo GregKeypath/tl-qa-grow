@@ -636,7 +636,19 @@ function outcomePrompt(s) {
     prevText(s),
     '',
     'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Each key result has two parts. goal: the behaviour, specific and achievable. measuredBy: how Greg and the adviser will both see it is happening, with a number and a timeframe, using things they can actually check (for example: Greg listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). ' + MEASURE_RULE + ' Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Every adviser commitment and every agreed action must appear in the key results, worded as a clear, observable behaviour (for example, a commitment to apply the GROW model in calls becomes a key result about using the GROW model to structure every call). Do not add commitments that were not discussed. Check spelling carefully.',
-    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with the summary lines starting with "• ". Then "Your key take-away" with the agreed take-away in one sentence. Then "Your actions" with the agreed actions as lines starting with "• ", and one sentence saying these are also set as your goal in Bob. Then what Greg will do to support. Then say we will check in on how it is going at the next monthly QA session. Do not give a date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Never mention QA scores, ratings or percentages.',
+    'TASK 2: a recap email from Greg to ' + first(s.adviser) + ', written the way Greg actually writes to his team: friendly, plain and short, like a real person, not a corporate or AI email. About 120 to 180 words in total. Use everyday words and contractions (you\'re, we\'ll, I\'ll, it\'s). Short sentences. No flattery, no big adjectives, no filler.',
+    'Never use these words or phrases: appreciate your openness, fantastic, incredible, invaluable, journey, ensure, foster, leverage, empower, elevate, embrace, delve, robust, seamless, holistic, moving forward, going forward, I wanted to take a moment, I hope this email finds you well, keep up the great work, rest assured, do not hesitate, unfortunately.',
+    'Structure, with a blank line between each part, and the headings written on their own line with no colon:',
+    '1. "Hi ' + first(s.adviser) + '," then one or two short sentences thanking them for the chat and naming one specific thing they do well on calls, taken from the notes.',
+    '2. "Here\'s a quick recap so you\'ve got it in writing."',
+    '3. "What we talked about" then the summary lines starting with "• ", lightly shortened if needed.',
+    '4. "Your key take-away" then the agreed take-away as one plain sentence.',
+    '5. "Your actions" then the agreed actions as lines starting with "• ", then "These are also set up as your goal in Bob."',
+    '6. One sentence on what Greg will do to support, in first person (for example: I\'ll listen to a couple of your calls with you each fortnight and we can talk through how it\'s going.).',
+    '7. "We\'ll check in on how it\'s going at your next QA session." Do not give a date.',
+    '8. "Thanks so much," then "Greg" on the next line.',
+    'Here is an email Greg wrote himself, to match the tone: "Hi Andrew, Your October QA session is coming up in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month. ... I know listening back can feel a bit awkward, but it really is one of the best ways to improve. Thanks so much, looking forward to catching up. Greg"',
+    'No subject line inside the body. Never mention QA scores, ratings or percentages.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -914,7 +926,8 @@ async function buildOutcome(s, part) {
     const r = await ai(prompt);
     const h = r.hibob || {}, em = r.email || {};
     const newGoal = { title: toText(h.title), description: toText(h.description), keyResults: (Array.isArray(h.keyResults) ? h.keyResults : []).map(krNorm).filter(k => k.goal), dueDate: toText(h.dueDate) || n.followUp || '' };
-    const newEmail = { subject: toText(em.subject), body: toText(em.body).replace(/\\n/g, '\n') };
+    const held = String(s.date || today());
+    const newEmail = { subject: (s.partner || 'QA') + ' QA Session Recap, ' + MON_FULL[+held.slice(5, 7) - 1], body: toText(em.body).replace(/\\n/g, '\n') };
     s.outcome = {
       hibob: part === 'email' ? s.outcome.hibob : newGoal,
       email: part === 'goal' ? s.outcome.email : newEmail

@@ -612,7 +612,7 @@ function growPrompt(s) {
     '3. Choose ONE coaching focus for this session. Greg coaches to a single focus at a time, so pick the one habit or gap with the highest impact, weighing compliance (always the focus if any call failed it), how often it recurs across the calls, the section weightings, any earlier coaching goal and Greg\'s notes. Give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Return exactly one item.',
     '4. The focus field is that same single focus, as one line.',
     '5. Recognise 2 or 3 genuine strengths seen across the calls.',
-    '6. For every quote that shows something to develop, add "better": what the adviser could say instead at that same moment on the call, written as the actual words they would say to the student. Natural, warm and specific to that call, one or two sentences. Always fill better. If the quote shows something done well, write how they could build on it in that same moment (for example: follow the good question with a quick summary back), so every quote has a suggestion. Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
+    '6. For the coaching focus and every QA group (with or without a quote), add "better". With a quote it is what the adviser could say instead at that same moment on the call, written as the actual words they would say to the student. Natural, warm and specific to that call, one or two sentences. Always fill better. If the quote shows something done well, write how they could build on it in that same moment (for example: follow the good question with a quick summary back), so every quote has a suggestion. Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -1298,35 +1298,40 @@ function quoteTime(s, quote) {
   return '';
 }
 function quoteBlock(s, x, path) {
-  const tm = quoteTime(s, x.quote);
-  let h = '<div class="ev"><div class="evh">What ' + esc(first(s.adviser)) + ' said' + (x.date ? ' on ' + esc(fmtDate(x.date)) : '') + (tm ? ', at ' + tm + ' in the call' : '') + '</div><q>' + esc(x.quote) + '</q></div>';
-  if (x.better) h += '<div class="better"><div class="evh">Could say instead</div><textarea class="in" rows="2" data-bind="' + path + '.better">' + esc(x.better) + '</textarea></div>';
+  let h = '';
+  if (x.quote) {
+    const tm = quoteTime(s, x.quote);
+    h += '<div class="ev"><div class="evh">What ' + esc(first(s.adviser)) + ' said' + (x.date ? ' on ' + esc(fmtDate(x.date)) : '') + (tm ? ', at ' + tm + ' in the call' : '') + '</div><q>' + esc(x.quote) + '</q></div>';
+  }
+  if (x.better) h += '<div class="better"><div class="evh">' + (x.quote ? 'Could say instead' : 'Could say') + '</div><textarea class="in" rows="2" data-bind="' + path + '.better">' + esc(x.better) + '</textarea></div>';
   return h;
 }
 function betterTargets(s) {
   const pl = s.plan || {}, out = [];
   const it = (pl.items || [])[0];
-  if (it && it.quote) out.push({ path: 'plan.items.0', label: 'Coaching focus', develop: it.detail, x: it });
-  GROUPS.forEach(g => { const x = (pl.groups || {})[g.key]; if (x && x.quote) out.push({ path: 'plan.groups.' + g.key, label: g.label, develop: x.develop, x }); });
+  if (it && (it.quote || it.detail)) out.push({ path: 'plan.items.0', label: 'Coaching focus', develop: it.detail, x: it });
+  GROUPS.forEach(g => { const x = (pl.groups || {})[g.key]; if (x && (x.quote || (x.develop && !/^nothing to develop/i.test(x.develop.trim())))) out.push({ path: 'plan.groups.' + g.key, label: g.label, develop: x.develop, x }); });
   return out;
 }
 async function buildBetter(s) {
-  const ts = betterTargets(s);
-  if (!ts.length) { toast('There are no quotes to work from.', true); return; }
+  const ts = betterTargets(s).filter(t => !t.x.better);
+  if (!ts.length) { toast('Every section already has a suggestion.'); return; }
   busy('Writing what ' + first(s.adviser) + ' could say instead…');
   try {
     const r = await ai([
       'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, coach Student Success Adviser ' + first(s.adviser) + ' on their phone calls with online postgraduate students.',
       'For each numbered quote below, write what ' + first(s.adviser) + ' could say instead at that same moment on the call: the actual words they would say to the student. Natural, warm and specific to that moment, one or two sentences, and it should fix the point to develop. Always write a line for every quote. If the quote shows something done well, write how they could build on it in that same moment (for example: follow the good question with a quick summary back). Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
       '',
-      ts.map((t, i) => (i + 1) + '. ' + t.label + '. Point to develop: ' + (t.develop || 'none') + '. Quote: "' + t.x.quote + '"').join(String.fromCharCode(10)),
+      'Some items have no quote. For those, write a line ' + first(s.adviser) + ' could say on a call that shows the point to develop done well.',
+      '',
+      ts.map((t, i) => (i + 1) + '. ' + t.label + '. Point to develop: ' + (t.develop || 'none') + '. ' + (t.x.quote ? 'Quote: "' + t.x.quote + '"' : 'No quote.')).join(String.fromCharCode(10)),
       '',
       'RULES', RULES.join(String.fromCharCode(10)), '',
       'Return JSON only: {"better":["",""]} with one string per quote, in order.'
     ].join(String.fromCharCode(10)));
     const arr = Array.isArray(r.better) ? r.better : [];
     ts.forEach((t, i) => { t.x.better = toText(arr[i]); });
-    await saveNow(s);
+    for (const t of ts) await fetch(DB + '/' + s.id + '/' + t.path.split('.').join('/') + '/better.json', { method: 'PUT', body: JSON.stringify(t.x.better) });
     toast('Suggestions added');
   } catch (e) { toast(e.message || String(e), true); }
   finally { busy(''); render(); }
@@ -1340,17 +1345,17 @@ function vPlan(s) {
   let h = '<div class="card item" style="margin-bottom:14px"><div class="item-h"><h2 style="margin:0">Coaching focus</h2><span style="flex:1"></span>' + (it.calls ? '<span class="pill st-plan">Came up in ' + it.calls + ' of ' + calls.length + ' calls</span>' : '') + '</div>';
   h += '<input class="in" data-bind="plan.focus" value="' + esc(pl.focus) + '" style="font-weight:600;font-size:15px">';
   h += '<label class="f">What to coach and what good looks like</label><textarea class="in" rows="3" data-bind="plan.items.0.detail">' + esc(it.detail) + '</textarea>';
-  if (it.quote) h += quoteBlock(s, it, 'plan.items.0');
+  h += quoteBlock(s, it, 'plan.items.0');
   h += '<div class="row" style="margin-top:6px"><label class="f" style="margin:0">Coaching questions you could ask' + ((it.questions || []).length ? ' (one per line)' : '') + '</label><span style="flex:1"></span><button class="btn blue sm" data-act="questions">' + ((it.questions || []).length ? 'Rewrite coaching questions' : 'Suggest coaching questions') + '</button></div>';
   if ((it.questions || []).length) h += '<textarea class="in" rows="' + Math.max(4, it.questions.length + 1) + '" data-bind="plan.items.0.questions" data-lines>' + esc(it.questions.join(String.fromCharCode(10))) + '</textarea>';
   if (pl.items.length > 1) h += '<p class="tip">These insights were built with ' + pl.items.length + ' themes before the change to one focus. <button class="link" data-act="build">Rebuild</button> to get a single focus, or keep this one.</p>';
   h += '</div>';
   h += '<div class="card" style="margin-bottom:14px"><div class="grid g2"><div><label class="f">Overall picture across ' + calls.length + ' call' + (calls.length === 1 ? '' : 's') + '</label><textarea class="in" rows="4" data-bind="plan.summary">' + esc(pl.summary) + '</textarea></div><div><label class="f">Strengths to recognise (one per line)</label><textarea class="in" rows="4" data-bind="plan.strengths" data-lines>' + esc((pl.strengths || []).join('\n')) + '</textarea></div></div></div>';
-  h += '<div class="section-t"><h2>Insights by QA group</h2><span style="flex:1"></span>' + (betterTargets(s).some(t => !t.x.better) ? '<button class="btn blue sm" data-act="better">Suggest what to say instead</button>' : '') + '</div><div class="grid g2">' + GROUPS.map(g => {
+  h += '<div class="section-t"><h2>Insights by QA group</h2><span style="flex:1"></span>' + (betterTargets(s).some(t => !t.x.better) ? '<button class="btn blue sm" data-act="better">Suggest what to say</button>' : '') + '</div><div class="grid g2">' + GROUPS.map(g => {
     const x = (pl.groups || {})[g.key] || {};
     if (g.key === 'compliance' && !st.fails && !x.develop && !x.working) return '';
     const p = st.sec[g.key], r = g.key === 'compliance' ? (st.fails ? { label: st.fails + ' fail' + (st.fails > 1 ? 's' : ''), cls: 'r-dnm' } : { label: 'No fails', cls: 'r-exc' }) : ratingPct(p);
-    return '<div class="card grp ' + r.cls + '"><div class="stage-h"><h3>' + g.label + '</h3><span class="pill" style="margin-left:auto">' + (isNum(p) && g.key !== 'compliance' ? (p / 20).toFixed(1) + '/5 ' : '') + r.label + '</span></div><label class="f">What is working</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.working">' + esc(x.working) + '</textarea><label class="f">To develop</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.develop">' + esc(x.develop) + '</textarea>' + (x.quote ? quoteBlock(s, x, 'plan.groups.' + g.key) : '') + '</div>';
+    return '<div class="card grp ' + r.cls + '"><div class="stage-h"><h3>' + g.label + '</h3><span class="pill" style="margin-left:auto">' + (isNum(p) && g.key !== 'compliance' ? (p / 20).toFixed(1) + '/5 ' : '') + r.label + '</span></div><label class="f">What is working</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.working">' + esc(x.working) + '</textarea><label class="f">To develop</label><textarea class="in" rows="3" data-bind="plan.groups.' + g.key + '.develop">' + esc(x.develop) + '</textarea>' + quoteBlock(s, x, 'plan.groups.' + g.key) + '</div>';
   }).join('') + '</div>';
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/notes">Next: session notes</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/pre">Back to pre-session email</button><button class="ghost" data-act="go" data-href="#/session/' + s.id + '/prep">Change preparation</button><span class="save">Built ' + (s.planAt ? new Date(s.planAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '') + '</span></div>';
   return h;

@@ -834,7 +834,7 @@ async function tidyNotes(s) {
       'TASK 1: tidy each field. Fix spelling and grammar, expand shorthand, and turn fragments into clear, short sentences or dot points starting with "• ". Keep every point and keep the meaning exactly. Do not add anything that was not in the notes, do not soften or judge, and keep the adviser\'s own words where they are quoted. Leave an empty field empty.',
       'TASK 2: write a summary of what was discussed, as 3 to 5 lines starting with "• ", written to ' + first(s.adviser) + ' in the second person (for example: • We looked at how you open outbound calls). Only include what is in the notes.',
       'TASK 3: write the key take-away: the one thing ' + first(s.adviser) + ' should remember from this session, in one sentence, in the second person, tied to the coaching focus.',
-      'TASK 4: write the actions: 2 or 3 lines starting with "• ", each a specific thing ' + first(s.adviser) + ' will do on their calls and how often, taken from the Will notes and commitments. Only include what was agreed.',
+      'TASK 4: write the actions: 2 or 3 lines starting with "• ", each a specific thing ' + first(s.adviser) + ' will do on their calls and how often, taken from the Will notes and commitments. Each line must be a different action; put any start date or timing inside the action rather than on its own line. Use 1 line if only one action was agreed. Only include what was agreed.',
       '',
       'NOTES',
       JSON.stringify(src),

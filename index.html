@@ -604,7 +604,7 @@ function growPrompt(s) {
 }
 function outcomePrompt(s) {
   const pl = s.plan || {}, n = s.notes || {};
-  const due = n.followUp || addDays(s.date || today(), 42);
+  const due = addDays(today(), 42);
   return [
     'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a GROW coaching session with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
     'Session month: ' + smLabel(s) + '. Today: ' + fmtDate(today()) + '.',
@@ -625,14 +625,13 @@ function outcomePrompt(s) {
     'Will: ' + (n.will || 'none'),
     'Adviser commitments: ' + (n.commitments || 'none'),
     'Support Greg will provide: ' + (n.support || 'none'),
-    'Follow-up date: ' + fmtDate(due) + ' (' + due + ')',
     'SUMMARY OF WHAT WAS DISCUSSED (agreed by Greg, use these lines for "What we talked about" in the email): ' + (n.summary || 'none, write it from the session notes'),
     '',
     'EARLIER COACHING',
     prevText(s),
     '',
     'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. 2 or 3 key results that are measurable, ideally against QA results (for example: Meets or above on Q4 in at least 4 of the next 5 evaluated calls) or a clearly observable behaviour. Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Do not add commitments that were not discussed.',
-    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with 2 to 4 lines starting with "• ". Then the goal in one sentence. Then "What you\'ve committed to" with lines starting with "• ". Then what Greg will do to support. Then the check-in date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Do not mention scores unless they help.',
+    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with 2 to 4 lines starting with "• ". Then the goal in one sentence. Then "What you\'ve committed to" with lines starting with "• ". Then what Greg will do to support. Then say we will check in on how it is going at the next monthly QA session. Do not give a date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Do not mention scores unless they help.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -1260,7 +1259,6 @@ function vNotes(s) {
     return '<div class="card stage ' + g.key + '"><div class="notes-stage"><div><div class="stage-h"><span class="L">' + g.L + '</span><div><h3>' + g.label + '</h3><span>' + esc(g.blurb) + '</span></div></div></div><div><label class="f">What ' + esc(first(s.adviser)) + ' said</label><textarea class="in" rows="6" data-bind="notes.' + g.key + '" placeholder="Notes for ' + g.label + '">' + esc(n[g.key] || '') + '</textarea></div></div></div>';
   }).join('');
   h += '<div class="card"><h2>What was agreed</h2><div class="grid g2"><div><label class="f">' + esc(first(s.adviser)) + '\'s commitments</label><textarea class="in" rows="4" data-bind="notes.commitments" placeholder="What they said they will do, in their words">' + esc(n.commitments || '') + '</textarea></div><div><label class="f">Support you will provide</label><textarea class="in" rows="4" data-bind="notes.support" placeholder="For example: listen to two calls together next week">' + esc(n.support || '') + '</textarea></div></div>';
-  h += '<label class="f">Follow-up date</label><input class="in" type="date" data-bind="notes.followUp" value="' + esc(n.followUp || '') + '" style="width:auto">';
   h += '</div>';
   h += '<div class="card" style="border-left:4px solid var(--o)"><div class="row"><h2 style="margin:0">Summary of what was discussed</h2><span style="flex:1"></span>' + (n.raw ? '<button class="link" data-act="untidy">Undo tidy</button>' : '') + '<button class="btn blue sm" data-act="tidy">' + (n.summary ? 'Tidy and summarise again' : 'Tidy notes and summarise') + '</button></div>';
   h += '<p class="sub" style="margin:6px 0 10px">Cleans up the notes above without changing what was said, then writes a summary. The summary is used in the recap email.</p>';

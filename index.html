@@ -626,12 +626,14 @@ function outcomePrompt(s) {
     'Adviser commitments: ' + (n.commitments || 'none'),
     'Support Greg will provide: ' + (n.support || 'none'),
     'SUMMARY OF WHAT WAS DISCUSSED (agreed by Greg, use these lines for "What we talked about" in the email): ' + (n.summary || 'none, write it from the session notes'),
+    'KEY TAKE-AWAY (agreed by Greg): ' + (n.takeaway || 'none, write it from the session notes'),
+    'ACTIONS (agreed by Greg): ' + (n.actions || 'none, write them from the Will notes and commitments'),
     '',
     'EARLIER COACHING',
     prevText(s),
     '',
-    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description or key results, because future QA results are not known. Due date' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Do not add commitments that were not discussed.',
-    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with 2 to 4 lines starting with "• ". Then the goal in one sentence. Then "What you\'ve committed to" with lines starting with "• ". Then what Greg will do to support. Then say we will check in on how it is going at the next monthly QA session. Do not give a date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Do not mention scores unless they help.',
+    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description or key results, because future QA results are not known. Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Do not add commitments that were not discussed.',
+    'TASK 2: a recap email from Greg to ' + first(s.adviser) + '. Warm, encouraging and direct, as a Team Leader writes to someone in their team. Open with thanks for the conversation. Then a short paragraph on what went well. Then "What we talked about" with the summary lines starting with "• ". Then "Your key take-away" with the agreed take-away in one sentence. Then "Your actions" with the agreed actions as lines starting with "• ", and one sentence saying these are also set as your goal in Bob. Then what Greg will do to support. Then say we will check in on how it is going at the next monthly QA session. Do not give a date. Sign off "Cheers," then "Greg" on the next line. No subject line inside the body. Use short paragraphs separated by blank lines. Never mention QA scores, ratings or percentages.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -831,6 +833,8 @@ async function tidyNotes(s) {
       '',
       'TASK 1: tidy each field. Fix spelling and grammar, expand shorthand, and turn fragments into clear, short sentences or dot points starting with "• ". Keep every point and keep the meaning exactly. Do not add anything that was not in the notes, do not soften or judge, and keep the adviser\'s own words where they are quoted. Leave an empty field empty.',
       'TASK 2: write a summary of what was discussed, as 3 to 5 lines starting with "• ", written to ' + first(s.adviser) + ' in the second person (for example: • We looked at how you open outbound calls). Only include what is in the notes.',
+      'TASK 3: write the key take-away: the one thing ' + first(s.adviser) + ' should remember from this session, in one sentence, in the second person, tied to the coaching focus.',
+      'TASK 4: write the actions: 2 or 3 lines starting with "• ", each a specific thing ' + first(s.adviser) + ' will do on their calls and how often, taken from the Will notes and commitments. Only include what was agreed.',
       '',
       'NOTES',
       JSON.stringify(src),
@@ -838,11 +842,13 @@ async function tidyNotes(s) {
       'RULES',
       RULES.join(String.fromCharCode(10)),
       '',
-      'Return JSON only: {"goal":"","reality":"","options":"","will":"","commitments":"","support":"","summary":""}'
+      'Return JSON only: {"goal":"","reality":"","options":"","will":"","commitments":"","support":"","summary":"","takeaway":"","actions":""}'
     ].join(String.fromCharCode(10)));
     if (!n.raw) n.raw = src;
     TIDY_KEYS.forEach(k => { if ((n[k] || '').trim() && typeof r[k] === 'string' && r[k].trim()) n[k] = r[k].replace(/\\n/g, '\n'); });
     n.summary = toText(r.summary).replace(/\\n/g, '\n');
+    n.takeaway = toText(r.takeaway).replace(/\\n/g, '\n');
+    n.actions = toText(r.actions).replace(/\\n/g, '\n');
     s.notes = n;
     await saveNow(s);
     toast('Notes tidied and summary added');
@@ -1261,8 +1267,8 @@ function vNotes(s) {
   h += '<div class="card"><h2>What was agreed</h2><div class="grid g2"><div><label class="f">' + esc(first(s.adviser)) + '\'s commitments</label><textarea class="in" rows="4" data-bind="notes.commitments" placeholder="What they said they will do, in their words">' + esc(n.commitments || '') + '</textarea></div><div><label class="f">Support you will provide</label><textarea class="in" rows="4" data-bind="notes.support" placeholder="For example: listen to two calls together next week">' + esc(n.support || '') + '</textarea></div></div>';
   h += '</div>';
   h += '<div class="card" style="border-left:4px solid var(--o)"><div class="row"><h2 style="margin:0">Summary of what was discussed</h2><span style="flex:1"></span>' + (n.raw ? '<button class="link" data-act="untidy">Undo tidy</button>' : '') + '<button class="btn blue sm" data-act="tidy">' + (n.summary ? 'Tidy and summarise again' : 'Tidy notes and summarise') + '</button></div>';
-  h += '<p class="sub" style="margin:6px 0 10px">Cleans up the notes above without changing what was said, then writes a summary. The summary is used in the recap email.</p>';
-  h += n.summary ? '<textarea class="in" rows="5" data-bind="notes.summary">' + esc(n.summary) + '</textarea>' : '<p style="margin:0;color:var(--muted)">No summary yet.</p>';
+  h += '<p class="sub" style="margin:6px 0 10px">Cleans up the notes above without changing what was said, then writes a summary, the key take-away and the actions. All three are used in the recap email.</p>';
+  h += n.summary ? '<textarea class="in" rows="5" data-bind="notes.summary">' + esc(n.summary) + '</textarea><div class="grid g2" style="margin-top:4px"><div><label class="f">Key take-away</label><textarea class="in" rows="2" data-bind="notes.takeaway">' + esc(n.takeaway || '') + '</textarea></div><div><label class="f">Actions</label><textarea class="in" rows="3" data-bind="notes.actions">' + esc(n.actions || '') + '</textarea></div></div>' :'<p style="margin:0;color:var(--muted)">No summary yet.</p>';
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/outcome">Next: goal and email</button></div></div></div>';
   return h;
 }

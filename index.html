@@ -823,9 +823,9 @@ function vPre(s) {
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/plan">Next: QA insights</button></div>';
   return h;
 }
-const MEASURE_RULE = 'Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description, goals or measures, because future QA results are not known.';
+const MEASURE_RULE = 'Start each measure with who does what (for example: Greg listens to...), never with "This is measured by" or "Measured by". Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description, goals or measures, because future QA results are not known.';
 function krNorm(k) {
-  if (k && typeof k === 'object') return { goal: toText(k.goal || k.text), measure: toText(k.measure || k.measuredBy) };
+  if (k && typeof k === 'object') return { goal: toText(k.goal || k.text), measure: toText(k.measure || k.measuredBy).replace(/^(this (is|will be) )?measured by:?[ ]*/i, '').replace(/^./, ch => ch.toUpperCase()) };
   return { goal: toText(k), measure: '' };
 }
 async function buildMeasures(s) {
@@ -848,7 +848,7 @@ async function buildMeasures(s) {
       'Return JSON only: {"measures":["",""]} with one string per key result, in order.'
     ].join(String.fromCharCode(10)));
     const arr = Array.isArray(r.measures) ? r.measures : [];
-    todo.forEach((x, n) => { hb.keyResults[x.i].measure = toText(arr[n]); });
+    todo.forEach((x, n) => { hb.keyResults[x.i] = krNorm({ goal: x.k.goal, measure: toText(arr[n]) }); });
     await saveNow(s);
     toast('Measures added');
   } catch (e) { toast(e.message || String(e), true); }

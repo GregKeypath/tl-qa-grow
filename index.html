@@ -458,14 +458,30 @@ async function loadSessions() {
 }
 const saveTimers = {};
 function saveState(t) { $('#saveState').textContent = t; }
-function saveSoon(s) {
+const dirtyPaths = {}, dirtyFull = {};
+function saveSoon(s, path) {
   s.updatedAt = Date.now();
+  if (path) (dirtyPaths[s.id] = dirtyPaths[s.id] || new Set()).add(path);
+  else dirtyFull[s.id] = true;
   saveState('Saving…');
   clearTimeout(saveTimers[s.id]);
-  saveTimers[s.id] = setTimeout(() => saveNow(s), 600);
+  saveTimers[s.id] = setTimeout(() => dirtyFull[s.id] ? saveNow(s) : savePaths(s), 600);
+}
+async function savePaths(s) {
+  const paths = [...(dirtyPaths[s.id] || [])];
+  dirtyPaths[s.id] = new Set();
+  try {
+    for (const p of paths.concat(['updatedAt'])) {
+      const r = await fetch(DB + '/' + s.id + '/' + p.split('.').join('/') + '.json', { method: 'PUT', body: JSON.stringify(getPath(s, p) === undefined ? null : getPath(s, p)) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    }
+    saveState('All changes saved');
+  } catch (e) { paths.forEach(p => dirtyPaths[s.id].add(p)); saveState('Not saved'); toast('Could not save: ' + (e.message || e), true); }
 }
 async function saveNow(s) {
   clearTimeout(saveTimers[s.id]);
+  dirtyFull[s.id] = false;
+  dirtyPaths[s.id] = new Set();
   try {
     const r = await fetch(DB + '/' + s.id + '.json', { method: 'PUT', body: JSON.stringify(s) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1393,7 +1409,7 @@ document.addEventListener('click', e => {
   if (act === 'preset') {
     const all = callsFor(s.adviser), p = t.dataset.preset;
     const list = p.startsWith('m:') ? all.filter(c => String(c.interactionDate).startsWith(p.slice(2))) : p === '30' ? inWindow(all, '30') : p === '5' ? all.slice(0, 5) : p === 'fails' ? all.filter(c => c.result === 'Auto-Fail' || (c.compliance && /fail/i.test(c.compliance.result || ''))) : [];
-    s.callIds = list.map(c => c.interactionId); saveSoon(s); render(); return;
+    s.callIds = list.map(c => c.interactionId); saveSoon(s, 'callIds'); render(); return;
   }
   if (act === 'build') { buildPlan(s); return; }
   if (act === 'questions') { buildQuestions(s); return; }
@@ -1407,9 +1423,9 @@ document.addEventListener('click', e => {
   if (act === 'copy') { copy(String(getPath(s, t.dataset.path) || '')); return; }
   if (act === 'copy-due') { copy(fmtDate(getPath(s, 'outcome.hibob.dueDate'))); return; }
   if (act === 'copy-goal') { copy(goalText(s.outcome.hibob)); return; }
-  if (act === 'add-item') { s.plan.items = (s.plan.items || []).concat([{ title: 'New coaching item', detail: '', calls: null, quote: '', date: '' }]); saveSoon(s); render(); return; }
-  if (act === 'del-item') { s.plan.items.splice(+t.dataset.i, 1); saveSoon(s); render(); return; }
-  if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).map(krNorm).concat([{ goal: '', measure: '' }]); saveSoon(s); render(); return; }
+  if (act === 'add-item') { s.plan.items = (s.plan.items || []).concat([{ title: 'New coaching item', detail: '', calls: null, quote: '', date: '' }]); saveSoon(s, 'plan.items'); render(); return; }
+  if (act === 'del-item') { s.plan.items.splice(+t.dataset.i, 1); saveSoon(s, 'plan.items'); render(); return; }
+  if (act === 'add-kr') { s.outcome.hibob.keyResults = (s.outcome.hibob.keyResults || []).map(krNorm).concat([{ goal: '', measure: '' }]); saveSoon(s, 'outcome.hibob.keyResults'); render(); return; }
   if (act === 'measures') { buildMeasures(s); return; }
   if (act === 'mailto') { const em = s.outcome.email; location.href = 'mailto:?subject=' + encodeURIComponent(em.subject || '') + '&body=' + encodeURIComponent(em.body || ''); return; }
   if (act === 'complete') { s.complete = !s.complete; s.completedAt = s.complete ? Date.now() : null; saveNow(s); render(); toast(s.complete ? 'Session marked complete' : 'Session reopened'); return; }
@@ -1427,7 +1443,7 @@ document.addEventListener('input', e => {
   let v = el.value;
   if (el.hasAttribute('data-lines')) v = v.split('\n').map(x => x.trim()).filter(Boolean);
   setPath(s, p, v);
-  saveSoon(s);
+  saveSoon(s, p);
   if (el.matches('textarea.in')) fitBox(el);
   if (el.hasAttribute('data-rerender') && $('#prePreview')) $('#prePreview').innerHTML = preParts(s).html;
 });
@@ -1438,7 +1454,7 @@ document.addEventListener('change', e => {
     const set = new Set(s.callIds || []);
     el.checked ? set.add(el.dataset.call) : set.delete(el.dataset.call);
     s.callIds = [...set];
-    saveSoon(s);
+    saveSoon(s, 'callIds');
     const y = window.scrollY, box = document.querySelector('.pick-list'), sy = box ? box.scrollTop : 0;
     render();
     window.scrollTo(0, y);
@@ -1447,7 +1463,7 @@ document.addEventListener('change', e => {
     const s = curSession(); if (!s || !s.preEmail) return;
     const id = el.dataset.precall, list = s.preEmail.calls || [];
     s.preEmail.calls = el.checked ? list.concat([{ id, why: '' }]) : list.filter(x => x.id !== id);
-    saveSoon(s);
+    saveSoon(s, 'preEmail.calls');
     render();
   } else if (el.dataset && el.dataset.bind === 'date') render();
 });

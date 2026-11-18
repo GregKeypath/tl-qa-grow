@@ -1418,6 +1418,11 @@ function vOutcome(s) {
 
 function curSession() { const r = route(); return r.page === 'session' ? SESS[r.a] : null; }
 function newSession(name) {
+  const open = sessionsFor(name).find(x => !x.complete);
+  if (open && confirm(first(name) + ' already has a coaching session in progress (' + smLabel(open) + '). Open that one?\n\nOK opens it. Cancel starts a new session.')) {
+    location.hash = '#/session/' + open.id + '/' + (open.outcome ? 'outcome' : open.plan ? 'plan' : 'prep');
+    return;
+  }
   const a = ADVISERS.find(x => x.name === name) || { name, partner: '' };
   const calls = callsFor(name);
   const lastMonth = calls.length ? String(calls[0].interactionDate).slice(0, 7) : '';

@@ -684,6 +684,10 @@ function normPlan(r) {
   return o;
 }
 async function buildPlan(s) {
+  try {
+    const fresh = await (await fetch(DB + '/' + s.id + '/prep.json', { cache: 'no-store' })).json();
+    if (fresh) { s.prep = s.prep || {}; ['observations', 'goal', 'questions'].forEach(k => { if (!(s.prep[k] || '').trim() && fresh[k]) s.prep[k] = fresh[k]; }); }
+  } catch (e) { }
   const calls = (s.callIds || []).map(callById).filter(Boolean);
   if (!calls.length && !((s.prep || {}).observations || (s.prep || {}).goal)) { toast('Tick some QA calls or add your observations first.', true); return; }
   if (calls.length && calls.every(c => c.manual && !c.scored) && !((s.prep || {}).observations || '').trim()) { toast('Add your QA findings under Your QA findings first.', true); return; }

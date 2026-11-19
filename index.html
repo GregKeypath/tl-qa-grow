@@ -74,6 +74,24 @@ main{padding:24px 28px 60px;min-width:0;max-width:1320px}
 .adv{cursor:pointer;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--pc);transition:transform .12s,box-shadow .12s}
 .adv:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(36,38,43,.08)}
 .adv{--pc:#7d89a1}.adv.unsw{--pc:var(--unsw)}.adv.mbs{--pc:var(--mbs)}
+.hero{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;background:linear-gradient(120deg,color-mix(in srgb,var(--tc) 14%,#fff),#fff 55%,color-mix(in srgb,var(--hc) 14%,#fff));border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(var(--tc),var(--hc))}
+.hero-hi{font:700 30px/1.15 var(--display);letter-spacing:-.02em}
+.hero-hi .tl-name{color:var(--tc)}
+.hero-sub{font:600 18px var(--display);color:var(--muted);margin-top:4px}
+.hero-sub .p-name{color:var(--hc);background:color-mix(in srgb,var(--hc) 12%,#fff);padding:1px 10px;border-radius:999px}
+.hero-stats{display:flex;gap:10px;flex-wrap:wrap}
+.hero-stats div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-width:110px}
+.hero-stats b{display:block;font:700 24px/1.1 var(--mono)}
+.hero-stats span{font-size:12px;color:var(--muted)}
+.pchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+.pchip{border:1px solid color-mix(in srgb,var(--pc) 40%,#fff);background:color-mix(in srgb,var(--pc) 10%,#fff);color:var(--pc);border-radius:999px;padding:6px 14px;font-weight:700}
+.pchip b{font:600 12px var(--mono);opacity:.8;margin-left:4px}
+.pchip:hover{background:color-mix(in srgb,var(--pc) 18%,#fff)}
+.psec h2{color:var(--pc);font-size:20px;padding-left:12px;border-left:5px solid var(--pc)}
+.ptag{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--pc) 12%,#fff);color:var(--pc)}
+.tlbtn{border:2px solid var(--tc);color:var(--tc);background:color-mix(in srgb,var(--tc) 8%,#fff);border-radius:10px;padding:10px 16px;font-weight:700}
+.tlbtn:hover{background:color-mix(in srgb,var(--tc) 16%,#fff)}
 .hsel{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:6px 8px;font:500 13px var(--sans);color:var(--ink);max-width:180px}
 .adv-h{display:flex;align-items:flex-start;gap:10px}
 .adv-h h3{font-size:17px}
@@ -286,10 +304,14 @@ const POD_C = [
   { name: 'Inuri Nethisinghe', partner: 'MBS' }
 ];
 let ADVISERS = POD_C.map(a => Object.assign({ partners: [a.partner] }, a));
-const TLS = ['Greg Banks', 'Layna Armstrong', 'David Hagiel', 'Dilshan Fernando', 'Brett Sanderson', 'Carmela Gomez', 'Spencer Pixton', 'Lareina Rajah'];
+const TLS = ['Greg Banks', 'Layna Armstrong', 'David Hagiel', 'Dilshan Fernando', 'Brett Sanderson'];
+const TL_COL = { 'Greg Banks': '#1f9461', 'Layna Armstrong': '#c2367a', 'David Hagiel': '#3d68cc', 'Dilshan Fernando': '#c76a1c', 'Brett Sanderson': '#6a5be0' };
+const P_COL = { UNSW: '#d9a300', MBS: '#0b5cb0', UTS: '#0891b2', UC: '#7c3aed', VU: '#dc2645', ECU: '#16a34a', SCU: '#ea580c', JCU: '#db2777', DEAKIN: '#0f766e', SIM: '#9333ea', UOM: '#1e3a8a', Other: '#64748b' };
+function pCol(p) { return P_COL[p] || '#64748b'; }
+function tCol(n) { return TL_COL[n] || '#1f9461'; }
 const EXCLUDE_ADVISERS = ['Saravanan Rajamani'];
 function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } }
-let TL = ls('grow-tl'), PARTNER = ls('grow-partner') || 'All', sessScope = ls('grow-scope') || 'mine';
+let TL = TLS.includes(ls('grow-tl')) ? ls('grow-tl') : '', PARTNER = ls('grow-partner') || 'All', sessScope = ls('grow-scope') || 'mine';
 function tlName() { return TL || 'the team leader'; }
 function tl() { return TL ? TL.split(' ')[0] : 'the team leader'; }
 function partnerLabel(p) { return p === 'DEAKIN' ? 'Deakin' : p; }
@@ -1063,7 +1085,7 @@ function secBars(st) {
   }).join('');
 }
 function vWho() {
-  return '<div class="card" style="max-width:560px;margin:40px auto;text-align:center"><h2 style="font-size:22px">Who is coaching?</h2><p style="color:var(--muted);margin:0 0 16px">Pick your name. This browser will remember it, and you can change it at the top of the page.</p><div class="row" style="justify-content:center">' + TLS.map(n => '<button class="ghost" data-act="pick-tl" data-tl="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div></div>';
+  return '<div class="card" style="max-width:560px;margin:40px auto;text-align:center"><h2 style="font-size:22px">Who is coaching?</h2><p style="color:var(--muted);margin:0 0 16px">Pick your name. This browser will remember it, and you can change it at the top of the page.</p><div class="row" style="justify-content:center">' + TLS.map(n => '<button class="tlbtn" style="--tc:' + tCol(n) + '" data-act="pick-tl" data-tl="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div></div>';
 }
 function renderTop() {
   const ps = $('#partnerSel'), ts = $('#tlSel');
@@ -1072,20 +1094,37 @@ function renderTop() {
     if (PARTNER !== 'All' && !list.includes(PARTNER)) list.push(PARTNER);
     ps.innerHTML = list.map(p => '<option value="' + esc(p) + '"' + (p === PARTNER ? ' selected' : '') + '>' + (p === 'All' ? 'All partners' : esc(partnerLabel(p))) + '</option>').join('');
   }
+  if (ps) ps.style.cssText = PARTNER === 'All' ? '' : 'border-color:' + pCol(PARTNER) + ';color:' + pCol(PARTNER) + ';font-weight:700';
+  if (ts) ts.style.cssText = TL ? 'border-color:' + tCol(TL) + ';color:' + tCol(TL) + ';font-weight:700' : '';
   if (ts) ts.innerHTML = '<option value="">Who is coaching?</option>' + TLS.map(n => '<option' + (n === TL ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
 }
+function hero() {
+  const hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  const shown = ADVISERS.filter(inPartner);
+  const mine = Object.values(SESS).filter(x => x && sessCoach(x) === TL && (PARTNER === 'All' || x.partner === PARTNER));
+  const ym = today().slice(0, 7);
+  const coachedMonth = mine.filter(x => x.complete && String(x.completedAt ? iso(new Date(x.completedAt)) : x.date).startsWith(ym)).length;
+  const callsMonth = shown.reduce((n, a) => n + callsFor(a.name).filter(c => String(c.interactionDate).startsWith(ym)).length, 0);
+  const pc = PARTNER === 'All' ? '#24262b' : pCol(PARTNER);
+  let h = '<div class="hero" style="--tc:' + tCol(TL) + ';--hc:' + pc + '">';
+  h += '<div class="hero-t"><div class="hero-hi">' + hi + ', <span class="tl-name">' + esc(tl()) + '</span></div>';
+  h += '<div class="hero-sub">Coaching <span class="p-name">' + (PARTNER === 'All' ? 'all partners' : esc(partnerLabel(PARTNER))) + '</span> advisers</div></div>';
+  h += '<div class="hero-stats">' + [[shown.length, 'Advisers'], [mine.filter(x => !x.complete).length, 'Your open sessions'], [coachedMonth, 'Coached this month'], [callsMonth, 'QA calls this month']].map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div></div>';
+  if (PARTNER === 'All') h += '<div class="pchips">' + partnersList().map(p => '<button class="pchip" style="--pc:' + pCol(p) + '" data-act="partner" data-p="' + esc(p) + '">' + esc(partnerLabel(p)) + ' <b>' + ADVISERS.filter(a => a.partners.includes(p)).length + '</b></button>').join('') + '</div>';
+  return h;
+}
 function vAdvisers() {
-  let h = '<div class="ph"><div><h1>Advisers</h1><p>Pick an adviser to see their QA findings and coaching history, or start a session.</p></div></div>' + loadingNote();
+  let h = hero() + loadingNote();
   const groups = PARTNER === 'All' ? partnersList() : [PARTNER];
   groups.forEach(pt => {
     const inGroup = ADVISERS.filter(a => a.partners.includes(pt));
     if (!inGroup.length) return;
-    h += '<div class="section-t"><h2>' + esc(partnerLabel(pt)) + '</h2><span class="tag ' + esc(pt.toLowerCase()) + '">' + inGroup.length + ' advisers</span></div><div class="adv-grid">';
+    h += '<div class="section-t psec" style="--pc:' + pCol(pt) + '"><h2>' + esc(partnerLabel(pt)) + '</h2><span class="ptag">' + inGroup.length + ' advisers</span></div><div class="adv-grid">';
     inGroup.forEach(a => {
       const calls = callsFor(a.name), lm = monthsOf(calls)[0], last5 = lm ? calls.filter(c => String(c.interactionDate).startsWith(lm)) : [], st = stats(last5);
       const ss = sessionsFor(a.name), last = ss[0];
       const ov = st.overall, r = ratingPct(ov);
-      h += '<div class="card adv ' + esc(pt.toLowerCase()) + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
+      h += '<div class="card adv" style="--pc:' + pCol(pt) + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
       h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + cdl(calls[0]) : a.partner === 'MBS' ? 'QA entered manually, none yet' : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
       h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>' + (lm ? monthLabel(lm) + ', ' + last5.length + ' call' + (last5.length === 1 ? '' : 's') : 'no calls') + '</span></div></div>';
       if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
@@ -1488,6 +1527,7 @@ document.addEventListener('click', e => {
   if (!t) return;
   const act = t.dataset.act, s = curSession();
   if (act === 'go') { location.hash = t.dataset.href; return; }
+  if (act === 'partner') { PARTNER = t.dataset.p; ls('grow-partner', PARTNER); render(); window.scrollTo(0, 0); return; }
   if (act === 'pick-tl') { TL = t.dataset.tl; ls('grow-tl', TL); render(); return; }
   if (act === 'scope') { sessScope = t.dataset.scope; ls('grow-scope', sessScope); render(); return; }
   if (act === 'fresh') { freshReload(); return; }

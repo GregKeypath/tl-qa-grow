@@ -1108,7 +1108,7 @@ function hero() {
   const pc = PARTNER === 'All' ? '#24262b' : pCol(PARTNER);
   let h = '<div class="hero" style="--tc:' + tCol(TL) + ';--hc:' + pc + '">';
   h += '<div class="hero-t"><div class="hero-hi">' + hi + ', <span class="tl-name">' + esc(tl()) + '</span></div>';
-  h += '<div class="hero-sub">Coaching <span class="p-name">' + (PARTNER === 'All' ? 'all partners' : esc(partnerLabel(PARTNER))) + '</span> advisers</div></div>';
+  h += (PARTNER === 'All' ? '' : '<div class="hero-sub">Coaching <span class="p-name">' + esc(partnerLabel(PARTNER)) + '</span> advisers</div>') + '</div>';
   h += '<div class="hero-stats">' + [[shown.length, 'Advisers'], [mine.filter(x => !x.complete).length, 'Your open sessions'], [coachedMonth, 'Coached this month'], [callsMonth, 'QA calls this month']].map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div></div>';
   if (PARTNER === 'All') h += '<div class="pchips">' + partnersList().map(p => '<button class="pchip" style="--pc:' + pCol(p) + '" data-act="partner" data-p="' + esc(p) + '">' + esc(partnerLabel(p)) + ' <b>' + ADVISERS.filter(a => a.partners.includes(p)).length + '</b></button>').join('') + '</div>';
   return h;

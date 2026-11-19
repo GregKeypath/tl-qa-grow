@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pod C GROW Coaching</title>
+<title>GROW Coaching</title>
 <script>(function () { var m = location.search.match(/[?&]call=([0-9a-fA-F-]{36})/); if (m) location.replace('https://apps.mypurecloud.com.au/directory/#/analytics/interactions/' + m[1] + '/admin/'); })();</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231f9461'/%3E%3Cpath d='M32 50V30' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M32 34c0-9 6-15 16-15 0 10-6 15-16 15zM32 30c0-7-5-12-13-12 0 8 5 12 13 12z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,7 +73,8 @@ main{padding:24px 28px 60px;min-width:0;max-width:1320px}
 .adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
 .adv{cursor:pointer;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--pc);transition:transform .12s,box-shadow .12s}
 .adv:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(36,38,43,.08)}
-.adv.unsw{--pc:var(--unsw)}.adv.mbs{--pc:var(--mbs)}
+.adv{--pc:#7d89a1}.adv.unsw{--pc:var(--unsw)}.adv.mbs{--pc:var(--mbs)}
+.hsel{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:6px 8px;font:500 13px var(--sans);color:var(--ink);max-width:180px}
 .adv-h{display:flex;align-items:flex-start;gap:10px}
 .adv-h h3{font-size:17px}
 .adv-h .meta{font-size:12px;color:var(--muted)}
@@ -247,10 +248,12 @@ dialog::backdrop{background:rgba(36,38,43,.35)}
 <header class="top">
   <a class="brand" href="#/advisers">
     <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1f9461"/><path d="M32 50V30" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M32 34c0-9 6-15 16-15 0 10-6 15-16 15zM32 30c0-7-5-12-13-12 0 8 5 12 13 12z" fill="#fff"/></svg>
-    <div><b>Pod C GROW Coaching</b><span>QA coaching record keeper</span></div>
+    <div><b>GROW Coaching</b><span>QA coaching record keeper</span></div>
   </a>
   <div class="sp"></div>
   <span class="save" id="saveState"></span>
+  <select class="hsel" id="partnerSel" title="Partner"></select>
+  <select class="hsel" id="tlSel" title="Who is coaching"></select>
   <span class="chip load" id="qaChip"><i></i>Loading QA data</span>
 </header>
 <div class="shell">
@@ -270,7 +273,7 @@ const QA_BASE = 'https://keypath-au.github.io/BU2-Team-Dashboard/';
 const QA_URL = QA_BASE + 'qa-dashboard.html';
 const DB = 'https://unsw-team-calendar-default-rtdb.asia-southeast1.firebasedatabase.app/grow_coaching';
 const MODEL = 'gemini-3.6-flash';
-const ADVISERS = [
+const POD_C = [
   { name: 'Amelia Churchill', partner: 'UNSW' },
   { name: 'Andrew Wedderburn', partner: 'UNSW' },
   { name: 'Daljeet Sahota', partner: 'UNSW' },
@@ -282,6 +285,28 @@ const ADVISERS = [
   { name: 'Emma Arjoon', partner: 'MBS' },
   { name: 'Inuri Nethisinghe', partner: 'MBS' }
 ];
+let ADVISERS = POD_C.map(a => Object.assign({ partners: [a.partner] }, a));
+const TLS = ['Greg Banks', 'Layna Armstrong', 'David Hagiel', 'Dilshan Fernando', 'Brett Sanderson', 'Carmela Gomez', 'Spencer Pixton', 'Lareina Rajah'];
+const EXCLUDE_ADVISERS = ['Saravanan Rajamani'];
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v); } catch (e) { return ''; } }
+let TL = ls('grow-tl'), PARTNER = ls('grow-partner') || 'All', sessScope = ls('grow-scope') || 'mine';
+function tlName() { return TL || 'the team leader'; }
+function tl() { return TL ? TL.split(' ')[0] : 'the team leader'; }
+function partnerLabel(p) { return p === 'DEAKIN' ? 'Deakin' : p; }
+function buildAdvisers() {
+  const map = {};
+  const add = (name, parts) => { if (!name || !/ /.test(name) || EXCLUDE_ADVISERS.includes(name)) return; map[name] = map[name] || []; (parts || []).forEach(p => { if (p && !map[name].includes(p)) map[name].push(p); }); };
+  if (QA) {
+    Object.entries(QA.advisorPartners || {}).forEach(([n, p]) => add(n, p));
+    QA.calls.forEach(c => add(c.advisor, []));
+  }
+  POD_C.forEach(a => add(a.name, [a.partner]));
+  Object.values(MANUAL || {}).forEach(c => add(c.advisor, [c.partner || 'MBS']));
+  ADVISERS = Object.keys(map).sort((a, b) => a.localeCompare(b)).map(n => ({ name: n, partners: map[n].length ? map[n] : ['Other'], partner: map[n][0] || 'Other' }));
+}
+function partnersList() { return [...new Set(ADVISERS.flatMap(a => a.partners))].sort((a, b) => partnerLabel(a).localeCompare(partnerLabel(b))); }
+function inPartner(a) { return PARTNER === 'All' || a.partners.includes(PARTNER); }
+function sessCoach(x) { return x.tl || 'Greg Banks'; }
 const SECTIONS = [
   { key: 'connect', label: 'Connect', qs: ['q1', 'q2'] },
   { key: 'explore', label: 'Explore', qs: ['q3', 'q4'] },
@@ -371,6 +396,7 @@ async function loadQA() {
     const data = JSON.parse(txt.slice(a, txt.indexOf('</' + 'script>', a)));
     QA = data;
     if (data.questions) QK.forEach(k => { if (data.questions[k] && data.questions[k].text) QTEXT[k] = data.questions[k].text; });
+    buildAdvisers();
     QAerr = '';
   } catch (e) { QAerr = e.message || String(e); }
   const chip = $('#qaChip');
@@ -543,7 +569,7 @@ async function ai(prompt) {
 function brief(all) {
   if (!all.length) return 'No QA evaluations were selected for this session.';
   const linkOnly = all.filter(c => c.manual && !c.scored), calls = all.filter(c => !(c.manual && !c.scored));
-  const note = linkOnly.length ? 'Greg listened to ' + linkOnly.length + ' call' + (linkOnly.length > 1 ? 's' : '') + ' himself (' + linkOnly.map(cdl).join('; ') + '). These have no scored evaluation: GREG\'S PREPARATION NOTES below are the QA findings for them and must be treated exactly like evaluator findings.' : '';
+  const note = linkOnly.length ? '' + tl() + ' listened to ' + linkOnly.length + ' call' + (linkOnly.length > 1 ? 's' : '') + ' himself (' + linkOnly.map(cdl).join('; ') + '). These have no scored evaluation: THE TEAM LEADER PREPARATION NOTES below are the QA findings for them and must be treated exactly like evaluator findings.' : '';
   if (!calls.length) return note;
   const st = stats(calls);
   const dates = calls.map(c => c.interactionDate).sort();
@@ -589,7 +615,7 @@ const RULES = [
 function growPrompt(s) {
   const p = s.prep || {};
   return [
-    'You are helping Greg Banks, Team Leader of Pod C, prepare a one-to-one GROW coaching session with Student Success Adviser ' + s.adviser + ' (' + (s.partner || '') + ' team, Keypath Education). Advisers support online postgraduate students by phone: enrolment, re-enrolment, study load, suspensions and withdrawals.',
+    'You are helping ' + tlName() + ', a Team Leader at Keypath Education, prepare a one-to-one GROW coaching session with Student Success Adviser ' + s.adviser + ' (' + (s.partner || '') + ' team, Keypath Education). Advisers support online postgraduate students by phone: enrolment, re-enrolment, study load, suspensions and withdrawals.',
     '',
     'QA framework FY27: Connect (Q1, Q2, 10%), Explore (Q3, Q4, 40%), Quality of Advice (Q5, Q6, 30%), Resolve (Q7, Q8, 20%). Each question is rated 1 to 5: Does Not Meet 1 to 2, Meets 3, Exceeds 4 to 5. Compliance (recording disclosure, then full name plus student ID or personal email verified before any account discussion) is pass or fail, and a fail is an auto-fail for the call.',
     '',
@@ -599,17 +625,17 @@ function growPrompt(s) {
     'EARLIER COACHING',
     prevText(s),
     '',
-    /GREG'S PREPARATION NOTES below are the QA findings/.test(s.qaBrief || '') ? "When the QA evidence comes from Greg's notes: build the group insights, coaching focus and strengths from his notes as if they were evaluator findings. Put each point under the QA group it belongs to. Leave quote and date empty unless Greg's notes contain a quote. Set calls to the number of calls his notes say it came up in, otherwise null. Never invent scores." : '',
-    "GREG'S PREPARATION NOTES",
+    /THE TEAM LEADER PREPARATION NOTES below are the QA findings/.test(s.qaBrief || '') ? "When the QA evidence comes from the team leader's notes: build the group insights, coaching focus and strengths from those notes as if they were evaluator findings. Put each point under the QA group it belongs to. Leave quote and date empty unless the notes contain a quote. Set calls to the number of calls his notes say it came up in, otherwise null. Never invent scores." : '',
+    'THE TEAM LEADER PREPARATION NOTES',
     'Observations: ' + (p.observations || 'none'),
-    'What Greg wants from this session: ' + (p.goal || 'not stated'),
-    'Anything else Greg wants to cover: ' + (p.questions || 'none'),
+    'What ' + tl() + ' wants from this session: ' + (p.goal || 'not stated'),
+    'Anything else ' + tl() + ' wants to cover: ' + (p.questions || 'none'),
     '',
     'TASK',
-    'Read across ALL the calls together and pull out insights Greg can build into his coaching session. Do not write coaching questions or a script.',
+    'Read across ALL the calls together and pull out insights ' + tl() + ' can build into their coaching session. Do not write coaching questions or a script.',
     '1. For each QA group (Connect, Explore, Quality of Advice, Resolve), give the overall insight across the calls: what is consistently working, what is consistently holding the adviser back, and one short quote taken word for word from the evidence that shows it, with the call date. If a group has nothing to develop, say so plainly.',
     '2. If any call failed compliance, give the same insight for Compliance. If none failed, leave compliance empty.',
-    '3. Choose ONE coaching focus for this session. Greg coaches to a single focus at a time, so pick the one habit or gap with the highest impact, weighing compliance (always the focus if any call failed it), how often it recurs across the calls, the section weightings, any earlier coaching goal and Greg\'s notes. Give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Return exactly one item.',
+    '3. Choose ONE coaching focus for this session. ' + tl() + ' coaches to a single focus at a time, so pick the one habit or gap with the highest impact, weighing compliance (always the focus if any call failed it), how often it recurs across the calls, the section weightings, any earlier coaching goal and ' + tl() + '\'s notes. Give a short title, what to coach and what good looks like on a call, how many of the calls it came up in, and one example quote with its date. Return exactly one item.',
     '4. The focus field is that same single focus, as one line.',
     '5. Recognise 2 or 3 genuine strengths seen across the calls.',
     '6. For the coaching focus and every QA group (with or without a quote), add "better". With a quote it is what the adviser could say instead at that same moment on the call, written as the actual words they would say to the student. Natural, warm and specific to that call, one or two sentences. Always fill better. If the quote shows something done well, write how they could build on it in that same moment (for example: follow the good question with a quick summary back), so every quote has a suggestion. Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
@@ -625,7 +651,7 @@ function outcomePrompt(s) {
   const pl = s.plan || {}, n = s.notes || {};
   const due = addDays(today(), 42);
   return [
-    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a GROW coaching session with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
+    'You are helping ' + tlName() + ', a Team Leader at Keypath Education, finish a GROW coaching session with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
     'Session month: ' + smLabel(s) + '. Today: ' + fmtDate(today()) + '.',
     '',
     'QA framework FY27: Connect (Q1 opening, Q2 listening), Explore (Q3 questioning, Q4 summarise and confirm understanding), Quality of Advice (Q5 appropriate advice, Q6 options presented), Resolve (Q7 close and next steps, Q8 student supported). Rated 1 to 5: Does Not Meet 1 to 2, Meets 3, Exceeds 4 to 5. Compliance is pass or fail.',
@@ -644,16 +670,16 @@ function outcomePrompt(s) {
     'Options: ' + (n.options || 'none'),
     'Will: ' + (n.will || 'none'),
     'Adviser commitments: ' + (n.commitments || 'none'),
-    'Support Greg will provide: ' + (n.support || 'none'),
-    'SUMMARY OF WHAT WAS DISCUSSED (agreed by Greg, use these lines for "What we talked about" in the email): ' + (n.summary || 'none, write it from the session notes'),
-    'KEY TAKE-AWAY (agreed by Greg): ' + (n.takeaway || 'none, write it from the session notes'),
-    'ACTIONS (agreed by Greg): ' + (n.actions || 'none, write them from the Will notes and commitments'),
+    'Support ' + tl() + ' will provide: ' + (n.support || 'none'),
+    'SUMMARY OF WHAT WAS DISCUSSED (agreed by ' + tl() + ', use these lines for "What we talked about" in the email): ' + (n.summary || 'none, write it from the session notes'),
+    'KEY TAKE-AWAY (agreed by ' + tl() + '): ' + (n.takeaway || 'none, write it from the session notes'),
+    'ACTIONS (agreed by ' + tl() + '): ' + (n.actions || 'none, write them from the Will notes and commitments'),
     '',
     'EARLIER COACHING',
     prevText(s),
     '',
-    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Each key result has two parts. goal: the behaviour, specific and achievable. measuredBy: how Greg and the adviser will both see it is happening, with a number and a timeframe, using things they can actually check (for example: Greg listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). ' + MEASURE_RULE + ' Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Every adviser commitment and every agreed action must appear in the key results, worded as a clear, observable behaviour (for example, a commitment to apply the GROW model in calls becomes a key result about using the GROW model to structure every call). Do not add commitments that were not discussed. Check spelling carefully.',
-    'TASK 2: a recap email from Greg to ' + first(s.adviser) + ', written the way Greg actually writes to his team: warm, friendly and genuine, like a real person who is proud of his team member, not a corporate or AI email. About 200 to 280 words in total. Use everyday words and contractions (you\'re, we\'ll, I\'ll, it\'s). Celebrate their strengths properly and specifically: say what they actually did on their calls and why it matters to students, the way you would say it to them face to face. Praise should be specific and believable, never generic superlatives.',
+    'TASK 1: a SMART goal for HiBob. Title under 80 characters, starting with a verb. Description of 2 to 4 sentences covering what the adviser will do differently on calls and why it matters for students. The goal is about a behaviour on calls (for example: explore the student\'s situation more before giving advice), and it must be SMART: specific, measurable, achievable, relevant and time-bound. 2 or 3 key results, each a clear, observable action the adviser controls and can track themselves, with a how-often or how-many (for example: ask at least two open questions to understand the student\'s situation before giving advice on every call; summarise back and check understanding before moving to options; listen back to one of my own calls each week and note how I explored). Each key result has two parts. goal: the behaviour, specific and achievable. measuredBy: how ' + tl() + ' and the adviser will both see it is happening, with a number and a timeframe, using things they can actually check (for example: ' + tl() + ' listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). ' + measureRule() + ' Due date ' + due + '. Base it on what was agreed in the session notes, in the adviser\'s own words where possible. Every adviser commitment and every agreed action must appear in the key results, worded as a clear, observable behaviour (for example, a commitment to apply the GROW model in calls becomes a key result about using the GROW model to structure every call). Do not add commitments that were not discussed. Check spelling carefully.',
+    'TASK 2: a recap email from ' + tl() + ' to ' + first(s.adviser) + ', written the way ' + tl() + ' actually writes to their team: warm, friendly and genuine, like a real person who is proud of his team member, not a corporate or AI email. About 200 to 280 words in total. Use everyday words and contractions (you\'re, we\'ll, I\'ll, it\'s). Celebrate their strengths properly and specifically: say what they actually did on their calls and why it matters to students, the way you would say it to them face to face. Praise should be specific and believable, never generic superlatives.',
     'Never use these words or phrases: appreciate your openness, fantastic, incredible, invaluable, journey, ensure, foster, leverage, empower, elevate, embrace, delve, robust, seamless, holistic, moving forward, going forward, I wanted to take a moment, I hope this email finds you well, keep up the great work, rest assured, do not hesitate, unfortunately.',
     'Structure, with a blank line between each part, and the headings written on their own line with no colon:',
     '1. "Hi ' + first(s.adviser) + '," then a short thank you for the chat, then a paragraph of 3 to 4 sentences celebrating 2 or 3 of their real strengths from the strengths list, QA summary and notes. Name what they did (for example: the way you made the student feel at ease when she was worried about her fees) and the difference it makes for students. Only praise what the evidence shows; do not praise anything that is a development area. Praise is about the calls reviewed for this session, so say "on the calls we looked at" or "this month", never "all your calls", "always" or "every call", because earlier months may differ. Sound genuinely pleased, as if talking to them in person. Never use assessment or faint-praise language such as solid foundation, baseline, adequate, satisfactory, demonstrates, once context is established, across the board, efficiently. Example of the right tone: I really enjoyed listening to your calls this month. Students can hear that you care, and you are great at keeping things calm and clear when they are stressed. Your advice is spot on, so they leave knowing exactly what to do next.',
@@ -661,10 +687,10 @@ function outcomePrompt(s) {
     '3. "What we talked about" then the summary lines starting with "• ", lightly shortened if needed.',
     '4. "Your key take-away" then the agreed take-away as one plain sentence.',
     '5. "Your actions" then the agreed actions as lines starting with "• ", then "These are also set up as your goal in Bob."',
-    '6. One sentence on what Greg will do to support, in first person (for example: I\'ll listen to a couple of your calls with you each fortnight and we can talk through how it\'s going.).',
+    '6. One sentence on what ' + tl() + ' will do to support, in first person (for example: I\'ll listen to a couple of your calls with you each fortnight and we can talk through how it\'s going.).',
     '7. "We\'ll check in on how it\'s going at your next QA session." Do not give a date.',
-    '8. "Thanks so much," then "Greg" on the next line.',
-    'Here is an email Greg wrote himself, to match the tone: "Hi Andrew, Your October QA session is coming up in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month. ... I know listening back can feel a bit awkward, but it really is one of the best ways to improve. Thanks so much, looking forward to catching up. Greg"',
+    '8. "Thanks so much," then "' + tl() + '" on the next line.',
+    'Here is an email a team leader wrote, to match the tone: "Hi Andrew, Your October QA session is coming up in our next catch up next week. These sessions are about helping you keep growing in your calls, and we will run them each month. ... I know listening back can feel a bit awkward, but it really is one of the best ways to improve. Thanks so much, looking forward to catching up. ' + tl() + '"',
     'No subject line inside the body. Never mention QA scores, ratings or percentages.',
     '',
     'RULES',
@@ -707,7 +733,7 @@ async function buildPlan(s) {
 function questionsPrompt(s) {
   const pl = s.plan || {}, p = s.prep || {};
   return [
-    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, prepare a GROW coaching conversation with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
+    'You are helping ' + tlName() + ', a Team Leader at Keypath Education, prepare a GROW coaching conversation with Student Success Adviser ' + s.adviser + ' (first name ' + first(s.adviser) + ').',
     'QA framework FY27: Connect (Q1 opening, Q2 listening), Explore (Q3 questioning, Q4 summarise and confirm understanding), Quality of Advice (Q5 appropriate advice, Q6 options presented), Resolve (Q7 close and next steps, Q8 student supported). Compliance is pass or fail.',
     '',
     'QA EVIDENCE',
@@ -721,7 +747,7 @@ function questionsPrompt(s) {
     (pl.items || []).map((i, n) => (n + 1) + '. ' + i.title + ': ' + i.detail).join('\n'),
     '',
     'TASK',
-    'Write 6 coaching questions Greg could ask ' + first(s.adviser) + ' about the coaching focus (the first coaching item), grounded in the QA feedback above. Ask about that one focus only.',
+    'Write 6 coaching questions ' + tl() + ' could ask ' + first(s.adviser) + ' about the coaching focus (the first coaching item), grounded in the QA feedback above. Ask about that one focus only.',
     'Questions are open and adviser-led: they help the adviser notice and solve it themselves rather than telling them. Short and natural to say aloud. Where it helps, anchor a question to a specific call by its date and what happened (for example: On your 27 Oct call, when the student mentioned...). Each question must make sense on first hearing: ask one thing only, in plain everyday words, and keep it under 35 words. Do not assume how the adviser felt (avoid "what made it challenging" or "why did you struggle"). Do not point out a mistake in the question (avoid "what prevented you", "what did you miss", "why did you not"); ask curious, forward-looking questions instead (what would you say, what could you try, what did you notice). Do not ask how the student felt about something that did not happen. Do not paste transcript fragments into a question unless the quote is short and reads clearly; describe what happened in plain words instead. Good example: On your 3 November call, the student kept coming back to the maths prerequisites and the cost of failing. If you had stopped to sum that up for her, what would you have said? Cover all four GROW stages in order (Goal, Reality, Options, Will) and start each question with its stage and a colon: "Goal: ", "Reality: ", "Options: " or "Will: ".',
     '',
     'RULES',
@@ -757,7 +783,7 @@ const MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July'
 function prePrompt(s, calls) {
   const pl = s.plan || {};
   return [
-    'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, choose calls for Student Success Adviser ' + first(s.adviser) + ' to listen back to before their monthly QA coaching session. The adviser is not told the focus: they listen and come to the session with their own view, so the calls must make the focus easy to notice.',
+    'You are helping ' + tlName() + ', a Team Leader at Keypath Education, choose calls for Student Success Adviser ' + first(s.adviser) + ' to listen back to before their monthly QA coaching session. The adviser is not told the focus: they listen and come to the session with their own view, so the calls must make the focus easy to notice.',
     '',
     'COACHING FOCUS: ' + (pl.focus || (s.prep || {}).goal || 'not decided yet: work it out from the calls below, the single most important habit or gap across them, compliance first if any call failed it'),
     'WHAT TO COACH: ' + (((pl.items || [])[0] || {}).detail || ''),
@@ -768,7 +794,7 @@ function prePrompt(s, calls) {
       return c.interactionId + ' | ' + cdl(c) + ' | ' + (isNum(c.overallScore) ? c.overallScore + '%' : 'not scored') + ' | ' + (c.result || '') + ' | ' + clip(c.primaryCoachingFocus || c.coachingRecommendation, 200) + ' | ' + (low || 'none');
     }).join('\n'),
     '',
-    'TASK: choose 2 or 3 calls (3 if at least 3 are available) that best show the coaching focus, so listening back makes it easy to notice. Prefer clear examples. Give each a one-line reason for Greg only.',
+    'TASK: choose 2 or 3 calls (3 if at least 3 are available) that best show the coaching focus, so listening back makes it easy to notice. Prefer clear examples. Give each a one-line reason for ' + tl() + ' only.',
     '',
     'RULES',
     RULES.join('\n'),
@@ -792,7 +818,7 @@ function preTemplate(s) {
     '',
     'Thanks so much, looking forward to catching up.',
     '',
-    'Greg'
+    tl()
   ].join('\n');
 }
 async function buildPre(s) {
@@ -895,7 +921,7 @@ function vPre(s) {
   h += '<div class="actions"><button class="btn" data-act="go" data-href="#/session/' + s.id + '/plan">Next: QA insights</button></div>';
   return h;
 }
-const MEASURE_RULE = 'Start each measure with who does what (for example: Greg listens to...), never with "This is measured by" or "Measured by". Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description, goals or measures, because future QA results are not known.';
+function measureRule() { return 'Start each measure with who does what (for example: ' + tl() + ' listens to...), never with "This is measured by" or "Measured by". Never mention QA scores, ratings, percentages, pass rates, auto-fails or evaluated calls in the title, description, goals or measures, because future QA results are not known.'; }
 function krNorm(k) {
   if (k && typeof k === 'object') return { goal: toText(k.goal || k.text), measure: toText(k.measure || k.measuredBy).replace(/^(this (is|will be) )?measured by:?[ ]*/i, '').replace(/^./, ch => ch.toUpperCase()) };
   return { goal: toText(k), measure: '' };
@@ -908,11 +934,11 @@ async function buildMeasures(s) {
   busy('Writing how each key result will be measured…');
   try {
     const r = await ai([
-      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, finish a SMART goal in Bob (HiBob) for Student Success Adviser ' + first(s.adviser) + '.',
+      'You are helping ' + tlName() + ', a Team Leader at Keypath Education, finish a SMART goal in Bob (HiBob) for Student Success Adviser ' + first(s.adviser) + '.',
       'Goal: ' + (hb.title || ''),
       '',
-      'For each key result below, write "measured by": how Greg and ' + first(s.adviser) + ' will both see it is happening, with a number and a timeframe, using things they can actually check (for example: Greg listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). One sentence each.',
-      MEASURE_RULE,
+      'For each key result below, write "measured by": how ' + tl() + ' and ' + first(s.adviser) + ' will both see it is happening, with a number and a timeframe, using things they can actually check (for example: ' + tl() + ' listens to 2 of your call recordings each fortnight and checks all four GROW stages are covered; you send 1 call recording each week with a note on how you explored; discussed at each weekly one to one). One sentence each.',
+      measureRule(),
       '',
       todo.map((x, n) => (n + 1) + '. ' + x.k.goal).join(String.fromCharCode(10)),
       '',
@@ -934,7 +960,7 @@ async function tidyNotes(s) {
   try {
     const src = {}; TIDY_KEYS.forEach(k => { src[k] = n[k] || ''; });
     const r = await ai([
-      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, tidy the notes he typed during a GROW coaching session with Student Success Adviser ' + first(s.adviser) + '. The coaching focus planned before the session was: ' + ((s.plan || {}).focus || 'not recorded') + '. Conversations often move to what the adviser brings, so the notes are what actually happened and always win over the planned focus.',
+      'You are helping ' + tlName() + ', a Team Leader at Keypath Education, tidy the notes they typed during a GROW coaching session with Student Success Adviser ' + first(s.adviser) + '. The coaching focus planned before the session was: ' + ((s.plan || {}).focus || 'not recorded') + '. Conversations often move to what the adviser brings, so the notes are what actually happened and always win over the planned focus.',
       'Notes were typed quickly during the conversation, so expect shorthand, typos and half sentences.',
       '',
       'TASK 1: tidy each field. Fix spelling and grammar, expand shorthand, and turn fragments into clear, short sentences or dot points starting with "• ". Keep every point and keep the meaning exactly. Do not add anything that was not in the notes, do not soften or judge, and keep the adviser\'s own words where they are quoted. Leave an empty field empty.',
@@ -1007,9 +1033,11 @@ function route() {
 function render() {
   const r = route();
   document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === r.page || ((r.page === 'adviser' || r.page === 'qa') && a.dataset.nav === 'advisers') || (r.page === 'session' && a.dataset.nav === 'sessions')));
-  const open = Object.values(SESS).filter(s => s && !s.complete).length;
+  const open = Object.values(SESS).filter(s => s && !s.complete && (sessScope === 'all' || sessCoach(s) === TL) && (PARTNER === 'All' || s.partner === PARTNER)).length;
   $('#openCount').textContent = open ? open + ' open' : '';
   const m = $('#main');
+  renderTop();
+  if (!TL) { m.innerHTML = vWho(); return; }
   if (r.page === 'adviser') m.innerHTML = vAdviser(r.a);
   else if (r.page === 'session') m.innerHTML = vSession(r.a, r.b);
   else if (r.page === 'sessions') m.innerHTML = vSessions();
@@ -1034,15 +1062,30 @@ function secBars(st) {
     return '<div class="mini-row ' + r.cls + '"><span>' + s.label + '</span><div class="bar"><i style="width:' + (isNum(p) ? p : 0) + '%"></i></div><span class="mono">' + (isNum(p) ? (p / 20).toFixed(1) : '–') + '</span></div>';
   }).join('');
 }
+function vWho() {
+  return '<div class="card" style="max-width:560px;margin:40px auto;text-align:center"><h2 style="font-size:22px">Who is coaching?</h2><p style="color:var(--muted);margin:0 0 16px">Pick your name. This browser will remember it, and you can change it at the top of the page.</p><div class="row" style="justify-content:center">' + TLS.map(n => '<button class="ghost" data-act="pick-tl" data-tl="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div></div>';
+}
+function renderTop() {
+  const ps = $('#partnerSel'), ts = $('#tlSel');
+  if (ps) {
+    const list = ['All'].concat(partnersList());
+    if (PARTNER !== 'All' && !list.includes(PARTNER)) list.push(PARTNER);
+    ps.innerHTML = list.map(p => '<option value="' + esc(p) + '"' + (p === PARTNER ? ' selected' : '') + '>' + (p === 'All' ? 'All partners' : esc(partnerLabel(p))) + '</option>').join('');
+  }
+  if (ts) ts.innerHTML = '<option value="">Who is coaching?</option>' + TLS.map(n => '<option' + (n === TL ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+}
 function vAdvisers() {
   let h = '<div class="ph"><div><h1>Advisers</h1><p>Pick an adviser to see their QA findings and coaching history, or start a session.</p></div></div>' + loadingNote();
-  ['UNSW', 'MBS'].forEach(pt => {
-    h += '<div class="section-t"><h2>' + pt + '</h2><span class="tag ' + pt.toLowerCase() + '">' + ADVISERS.filter(a => a.partner === pt).length + ' advisers</span></div><div class="adv-grid">';
-    ADVISERS.filter(a => a.partner === pt).forEach(a => {
+  const groups = PARTNER === 'All' ? partnersList() : [PARTNER];
+  groups.forEach(pt => {
+    const inGroup = ADVISERS.filter(a => a.partners.includes(pt));
+    if (!inGroup.length) return;
+    h += '<div class="section-t"><h2>' + esc(partnerLabel(pt)) + '</h2><span class="tag ' + esc(pt.toLowerCase()) + '">' + inGroup.length + ' advisers</span></div><div class="adv-grid">';
+    inGroup.forEach(a => {
       const calls = callsFor(a.name), lm = monthsOf(calls)[0], last5 = lm ? calls.filter(c => String(c.interactionDate).startsWith(lm)) : [], st = stats(last5);
       const ss = sessionsFor(a.name), last = ss[0];
       const ov = st.overall, r = ratingPct(ov);
-      h += '<div class="card adv ' + pt.toLowerCase() + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
+      h += '<div class="card adv ' + esc(pt.toLowerCase()) + '" data-act="go" data-href="#/adviser/' + encodeURIComponent(a.name) + '">';
       h += '<div class="adv-h"><div><h3>' + esc(a.name) + '</h3><div class="meta">' + (calls.length ? calls.length + ' QA calls, latest ' + cdl(calls[0]) : a.partner === 'MBS' ? 'QA entered manually, none yet' : QA ? 'No QA calls on the dashboard' : '') + '</div></div>';
       h += '<div class="score ' + r.cls + '"><b style="color:var(--bc)">' + (isNum(ov) ? Math.round(ov) + '%' : '–') + '</b><span>' + (lm ? monthLabel(lm) + ', ' + last5.length + ' call' + (last5.length === 1 ? '' : 's') : 'no calls') + '</span></div></div>';
       if (calls.length) h += '<div class="mini">' + secBars(st) + '</div>';
@@ -1164,17 +1207,17 @@ function histCard(s) {
 }
 function vSessions() {
   if (!sessLoaded) return '<div class="empty">Loading sessions…</div>';
-  let list = Object.values(SESS).filter(Boolean).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0));
+  let list = Object.values(SESS).filter(Boolean).filter(x => (sessScope === 'all' || sessCoach(x) === TL) && (PARTNER === 'All' || x.partner === PARTNER)).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0));
   const counts = { open: list.filter(s => !s.complete).length, done: list.filter(s => s.complete).length, all: list.length };
   if (sessFilter === 'open') list = list.filter(s => !s.complete);
   if (sessFilter === 'done') list = list.filter(s => s.complete);
-  let h = '<div class="ph"><div><h1>Sessions</h1><p>Every coaching session, newest first.</p></div><div class="sp"></div><div class="seg">' + [['open', 'Open'], ['done', 'Complete'], ['all', 'All']].map(f => '<button data-act="sfilter" data-f="' + f[0] + '" class="' + (sessFilter === f[0] ? 'on' : '') + '">' + f[1] + ' ' + counts[f[0]] + '</button>').join('') + '</div></div>';
+  let h = '<div class="ph"><div><h1>Sessions</h1><p>' + (sessScope === 'all' ? 'All team leaders' : 'Your sessions') + (PARTNER === 'All' ? ', all partners' : ', ' + esc(partnerLabel(PARTNER))) + ', newest first.</p></div><div class="sp"></div><div class="seg">' + [['mine', 'Mine'], ['all', 'All TLs']].map(f => '<button data-act="scope" data-scope="' + f[0] + '" class="' + (sessScope === f[0] ? 'on' : '') + '">' + f[1] + '</button>').join('') + '</div><div class="seg">' + [['open', 'Open'], ['done', 'Complete'], ['all', 'All']].map(f => '<button data-act="sfilter" data-f="' + f[0] + '" class="' + (sessFilter === f[0] ? 'on' : '') + '">' + f[1] + ' ' + counts[f[0]] + '</button>').join('') + '</div></div>';
   if (sessErr) h += '<div class="callout">Could not load saved sessions (' + esc(sessErr) + ').</div>';
   if (!list.length) return h + '<div class="card empty">No sessions here yet. Go to <a href="#/advisers">Advisers</a> to start one.</div>';
-  h += '<div class="card" style="padding:4px 8px;overflow-x:auto"><table class="table"><thead><tr><th>Month</th><th>Adviser</th><th>Focus or goal</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  h += '<div class="card" style="padding:4px 8px;overflow-x:auto"><table class="table"><thead><tr><th>Month</th><th>Adviser</th><th>Coach</th><th>Focus or goal</th><th>Due</th><th>Status</th></tr></thead><tbody>';
   list.forEach(s => {
     const so = statusOf(s), hb = s.outcome && s.outcome.hibob;
-    h += '<tr class="click" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><td class="mono" style="white-space:nowrap">' + smLabel(s) + '</td><td style="white-space:nowrap"><b>' + esc(s.adviser) + '</b></td><td>' + esc((hb && hb.title) || (s.plan && s.plan.focus) || '') + '</td><td class="mono" style="white-space:nowrap">' + (hb && hb.dueDate ? fmtDate(hb.dueDate) : '') + '</td><td><span class="pill ' + so.cls + '">' + so.label + '</span></td></tr>';
+    h += '<tr class="click" data-act="go" data-href="#/session/' + s.id + '/' + (s.complete || s.outcome ? 'outcome' : s.plan ? 'plan' : 'prep') + '"><td class="mono" style="white-space:nowrap">' + smLabel(s) + '</td><td style="white-space:nowrap"><b>' + esc(s.adviser) + '</b></td><td style="white-space:nowrap">' + esc(sessCoach(s)) + '</td><td>' + esc((hb && hb.title) || (s.plan && s.plan.focus) || '') + '</td><td class="mono" style="white-space:nowrap">' + (hb && hb.dueDate ? fmtDate(hb.dueDate) : '') + '</td><td><span class="pill ' + so.cls + '">' + so.label + '</span></td></tr>';
   });
   return h + '</tbody></table></div>';
 }
@@ -1330,7 +1373,7 @@ async function buildBetter(s) {
   busy('Writing what ' + first(s.adviser) + ' could say instead…');
   try {
     const r = await ai([
-      'You are helping Greg Banks, Team Leader of Pod C at Keypath Education, coach Student Success Adviser ' + first(s.adviser) + ' on their phone calls with online postgraduate students.',
+      'You are helping ' + tlName() + ', a Team Leader at Keypath Education, coach Student Success Adviser ' + first(s.adviser) + ' on their phone calls with online postgraduate students.',
       'For each numbered quote below, write what ' + first(s.adviser) + ' could say instead at that same moment on the call: the actual words they would say to the student. Natural, warm and specific to that moment, one or two sentences, and it should fix the point to develop. Always write a line for every quote. If the quote shows something done well, write how they could build on it in that same moment (for example: follow the good question with a quick summary back). Quotes come from automatic call transcripts and can contain misheard words or names (for example "submit the parent leave" is likely "program leave"). Never repeat a word that looks misheard: keep that part general instead.',
       '',
       'Some items have no quote. For those, write a line ' + first(s.adviser) + ' could say on a call that shows the point to develop done well.',
@@ -1418,7 +1461,7 @@ function vOutcome(s) {
 
 function curSession() { const r = route(); return r.page === 'session' ? SESS[r.a] : null; }
 function newSession(name) {
-  const open = sessionsFor(name).find(x => !x.complete);
+  const open = sessionsFor(name).find(x => !x.complete && sessCoach(x) === TL);
   if (open && confirm(first(name) + ' already has a coaching session in progress (' + smLabel(open) + '). Open that one?\n\nOK opens it. Cancel starts a new session.')) {
     location.hash = '#/session/' + open.id + '/' + (open.outcome ? 'outcome' : open.plan ? 'plan' : 'prep');
     return;
@@ -1427,7 +1470,7 @@ function newSession(name) {
   const calls = callsFor(name);
   const lastMonth = calls.length ? String(calls[0].interactionDate).slice(0, 7) : '';
   const pick = calls.filter(c => String(c.interactionDate).startsWith(lastMonth));
-  const s = { id: uid(), adviser: name, partner: a.partner, date: today(), callIds: pick.map(c => c.interactionId), prep: {}, notes: {}, createdAt: Date.now(), updatedAt: Date.now() };
+  const s = { id: uid(), adviser: name, tl: TL, partner: (PARTNER !== 'All' && (a.partners || []).includes(PARTNER)) ? PARTNER : a.partner, date: today(), callIds: pick.map(c => c.interactionId), prep: {}, notes: {}, createdAt: Date.now(), updatedAt: Date.now() };
   SESS[s.id] = s;
   saveNow(s);
   location.hash = '#/session/' + s.id + '/prep';
@@ -1445,6 +1488,8 @@ document.addEventListener('click', e => {
   if (!t) return;
   const act = t.dataset.act, s = curSession();
   if (act === 'go') { location.hash = t.dataset.href; return; }
+  if (act === 'pick-tl') { TL = t.dataset.tl; ls('grow-tl', TL); render(); return; }
+  if (act === 'scope') { sessScope = t.dataset.scope; ls('grow-scope', sessScope); render(); return; }
   if (act === 'fresh') { freshReload(); return; }
   if (act === 'toggle-call') { const id = t.dataset.cid; openCalls.has(id) ? openCalls.delete(id) : openCalls.add(id); render(); return; }
   if (act === 'win') { winSel = t.dataset.win; render(); return; }
@@ -1538,13 +1583,17 @@ document.addEventListener('visibilitychange', () => {
   checkVersion();
   if ($('#saveState').textContent !== 'Saving…' && !document.activeElement.matches('input,textarea')) loadSessions();
 });
+document.addEventListener('change', e => {
+  if (e.target.id === 'partnerSel') { PARTNER = e.target.value; ls('grow-partner', PARTNER); render(); }
+  if (e.target.id === 'tlSel') { TL = e.target.value; ls('grow-tl', TL); render(); }
+});
 let lastAdv = '';
-window.addEventListener('hashchange', () => { const r = route(); if (r.page === 'adviser' && r.a !== lastAdv) { winSel = ''; lastAdv = r.a; } render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { ls('grow-last', location.hash); const r = route(); if (r.page === 'adviser' && r.a !== lastAdv) { winSel = ''; lastAdv = r.a; } render(); window.scrollTo(0, 0); });
 window.addEventListener('beforeunload', e => { if ($('#saveState').textContent === 'Saving…') { e.preventDefault(); e.returnValue = ''; } });
-if (!location.hash) location.hash = '#/advisers';
+if (!location.hash) location.hash = ls('grow-last') || '#/advisers';
 render();
 loadSessions();
-loadManual().then(() => { manualLoaded = true; render(); });
+loadManual().then(() => { manualLoaded = true; buildAdvisers(); render(); });
 loadQA();
 </script>
 </body>
